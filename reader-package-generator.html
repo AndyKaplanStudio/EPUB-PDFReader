@@ -291,14 +291,14 @@
           "<script>" +
           "(function() {" +
           "  'use strict';" +
-          "  var state = { annotations: [], activeFilter: 'all', currentSelection: null };" +
+          "  var state = { annotations: [], activeFilter: 'all', currentSelection: null, cachedSelection: null };" +
           "  var nodes = {};" +
           "  function initAnnoEngine() {" +
           "    var searchGroup = document.getElementById('search') ? document.getElementById('search').parentNode : null;" +
           "    if (searchGroup) {" +
           "      var controls = document.createElement('div');" +
           "      controls.className = 'group'; controls.id = 'annotationControls';" +
-          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight Selected Text\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment to Selected Text\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight Selected Text\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
           "      searchGroup.parentNode.insertBefore(controls, searchGroup.nextSibling);" +
           "    }" +
           "    var searchResults = document.getElementById('searchResults');" +
@@ -332,20 +332,38 @@
           "  }" +
           "  function setupListeners() {" +
           "    if (!nodes.highlightBtn) return;" +
-          "    nodes.highlightBtn.onclick = function(e) { handleSelection(e, false); };" +
-          "    nodes.commentBtn.onclick = function(e) { handleSelection(e, true); };" +
+          "    nodes.highlightBtn.onclick = function(e) { handleSelectionAction(false); };" +
+          "    nodes.commentBtn.onclick = function(e) { handleSelectionAction(true); };" +
           "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; nodes.panelBtn.classList.toggle('active', open); if(open) renderList(); };" +
           "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; nodes.panelBtn.classList.remove('active'); };" +
           "    nodes.filters.forEach(function(btn) { btn.onclick = function() { nodes.filters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
           "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
           "    nodes.popoverSave.onclick = saveComment;" +
+          "    nodes.viewerArea.addEventListener('mouseup', cacheActiveSelection);" +
+          "    nodes.viewerArea.addEventListener('keyup', cacheActiveSelection);" +
           "  }" +
-          "  function handleSelection(e, isComment) {" +
+          "  function cacheActiveSelection() {" +
           "    var sel = window.getSelection();" +
-          "    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) { alert('Please select some text inside the document first.'); return; }" +
-          "    var range = sel.getRangeAt(0), text = sel.toString().trim();" +
-          "    if (!text) return;" +
-          "    var el = range.commonAncestorContainer; if (el.nodeType === Node.TEXT_NODE) el = el.parentNode;" +
+          "    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {" +
+          "      var range = sel.getRangeAt(0);" +
+          "      var text = sel.toString().trim();" +
+          "      if (text.length > 0) {" +
+          "        state.cachedSelection = {" +
+          "          text: text," +
+          "          rect: range.getBoundingClientRect()," +
+          "          container: range.commonAncestorContainer" +
+          "        };" +
+          "        return;" +
+          "      }" +
+          "    }" +
+          "  }" +
+          "  function handleSelectionAction(isComment) {" +
+          "    if (!state.cachedSelection) {" +
+          "      alert('Please select some text inside the document first.');" +
+          "      return;" +
+          "    }" +
+          "    var text = state.cachedSelection.text;" +
+          "    var el = state.cachedSelection.container; if (el.nodeType === Node.TEXT_NODE) el = el.parentNode;" +
           "    var pageSlot = el.closest('.page-slot'), pageNum = pageSlot ? parseInt(pageSlot.dataset.page, 10) : null;" +
           "    if (!pageNum) {" +
           "      var currentInput = document.getElementById('pageInput');" +
@@ -353,9 +371,10 @@
           "    }" +
           "    state.currentSelection = { type: isComment ? 'comment' : 'highlight', text: text, page: pageNum || 1 };" +
           "    if (isComment) {" +
-          "      var rect = range.getBoundingClientRect();" +
-          "      nodes.popover.style.left = (rect.left + window.scrollX) + 'px';" +
-          "      nodes.popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';" +
+          "      var rect = state.cachedSelection.rect;" +
+          "      var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
+          "      nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
+          "      nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
           "      nodes.popover.style.display = 'flex'; nodes.popoverText.value = ''; nodes.popoverText.focus();" +
           "    } else {" +
           "      saveHighlight();" +
@@ -363,12 +382,12 @@
           "  }" +
           "  function saveHighlight() {" +
           "    state.annotations.push({ id: 'a_'+Date.now(), type: 'highlight', text: state.currentSelection.text, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
+          "    state.cachedSelection = null; window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
           "  }" +
           "  function saveComment() {" +
           "    var val = nodes.popoverText.value.trim(); if(!val) return;" +
           "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.currentSelection.text, comment: val, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    nodes.popover.style.display = 'none'; window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
+          "    nodes.popover.style.display = 'none'; state.cachedSelection = null; window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
           "  }" +
           "  function renderList() {" +
           "    nodes.panelList.innerHTML = '';" +
