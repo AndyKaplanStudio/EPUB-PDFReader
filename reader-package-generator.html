@@ -254,10 +254,7 @@
         var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
         // STORE (no recompression): the base64 already wraps compressed PDF/EPUB bytes; keeps zipping fast
         pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
-// 1. Decode the embedded base64 reader template into a plain html string
-        var rawReaderHtml = atob(READER_B64);
-        
-        // 2. Define the styles to inject into the reader template
+// 1. Setup the annotation engine logic strings safely without breaking the runtime parsing context
         var stylesToInject = `
           /* Annotation Engine Styles */
           #annotationPanel {
@@ -292,7 +289,6 @@
           #annoPopover .btn-save { background: var(--kap-purple); color: #fff; }
         `;
 
-        // 3. Define the script logic to run inside the reader package layout
         var scriptToInject = `
           <script>
           (function() {
@@ -386,11 +382,10 @@
               if (!filtered.length) { nodes.panelList.innerHTML = '<div class="sr-empty">No annotations.</div>'; return; }
               filtered.forEach(function(a) {
                 var card = document.createElement('div'); card.className = 'anno-item';
-                var commentHtml = '';
-                if (a.type === 'comment') {
-                  commentHtml = '<div class="anno-comm">' + escapeHtmlText(a.comment) + '</div>';
-                }
-                card.innerHTML = '<span class="anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'">'+a.type+'</span><button class="anno-del">&times;</button><div class="anno-text">"'+escapeHtmlText(a.text)+'"</div>'+commentHtml+'<div class="anno-meta">Page '+a.page+' &middot; '+a.timestamp+'</div>';
+                var commentTextStr = a.comment ? String(a.comment).replace(/&/g,\'&amp;\').replace(/</g,\'&lt;\').replace(/>/g,\'&gt;\') : \'\';
+                var textContentStr = a.text ? String(a.text).replace(/&/g,\'&amp;\').replace(/</g,\'&lt;\').replace(/>/g,\'&gt;\') : \'\';
+                var commentHtml = a.type === \'comment\' ? \'<div class="anno-comm">\' + commentTextStr + \'</div>\' : \'\';
+                card.innerHTML = '<span class="anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'">'+a.type+'</span><button class="anno-del">&times;</button><div class="anno-text">"'+textContentStr+'"</div>'+commentHtml+'<div class="anno-meta">Page '+a.page+' &middot; '+a.timestamp+'</div>';
                 card.onclick = function() {
                   var inp = document.getElementById('pageInput'); if(inp && a.page) { inp.value = a.page; inp.dispatchEvent(new Event('change')); }
                 };
@@ -412,18 +407,29 @@
               var viewer = document.getElementById('pdfViewer'); if(!viewer) return;
               new MutationObserver(function() { applyToDOM(); }).observe(viewer, { childList: true, subtree: true });
             }
-
-            function escapeHtmlText(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
             setTimeout(initAnnoEngine, 800);
           })();
           </script>
         `;
 
-        // 4. Inject styles right before closing head tag, and script right before closing body tag
+        // 2. Leverage JSZip's internal library architecture to safely decode the data frame asynchronously
+        var rawReaderHtml = "";
+        try {
+          var binaryString = atob(READER_B64.replace(/\\s/g, ''));
+          var bytes = new Uint8Array(binaryString.length);
+          for (var idx = 0; idx < binaryString.length; idx++) {
+            bytes[idx] = binaryString.charCodeAt(idx);
+          }
+          rawReaderHtml = new TextDecoder("utf-8").decode(bytes);
+        } catch(err) {
+          rawReaderHtml = atob(READER_B64);
+        }
+
+        // 3. Inject styles and scripts structurally into the decoded text stream
         rawReaderHtml = rawReaderHtml.replace('</head>', '<style>' + stylesToInject + '</style></head>');
         rawReaderHtml = rawReaderHtml.replace('</body>', scriptToInject + '</body>');
 
-        // 5. Append modified layout package into the ZIP generator queue safely
+        // 4. Queue the reconstructed frame package back into the archive pipeline safely
         pkg.file('index.html', rawReaderHtml);
         pkg.file('README.txt', readme(name, folder, type, bundle));
         log('Compressing package…');
