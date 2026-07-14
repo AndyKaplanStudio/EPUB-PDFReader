@@ -274,7 +274,7 @@
           ".anno-item .anno-meta { font-size: 11px; color: var(--kap-muted); }" +
           ".anno-item .anno-del { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #8b0000; cursor: pointer; font-size: 14px; opacity: 0.4; transition: opacity 0.15s; padding: 4px; }" +
           ".anno-item:hover .anno-del { opacity: 1; }" +
-          ".kap-highlight-overlay { background-color: rgba(255, 235, 59, 0.45) !important; border-bottom: 1px dashed #fbc02d; position: relative; cursor: pointer; }" +
+          ".kap-highlight-overlay { background-color: rgba(255, 235, 59, 0.5) !important; border-bottom: 1px dashed #fbc02d; display: inline; }" +
           "#annoPopover {" +
           "  position: absolute; background: #fff; border: 1px solid var(--kap-line); border-radius: 12px;" +
           "  box-shadow: 0 4px 18px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; display: none; width: 260px;" +
@@ -291,14 +291,14 @@
           "<script>" +
           "(function() {" +
           "  'use strict';" +
-          "  var state = { annotations: [], activeFilter: 'all', activeMode: null, currentSelection: null };" +
+          "  var state = { annotations: [], activeFilter: 'all', activeMode: null, liveRange: null };" +
           "  var nodes = {};" +
           "  function initAnnoEngine() {" +
           "    var searchGroup = document.getElementById('search') ? document.getElementById('search').parentNode : null;" +
           "    if (searchGroup) {" +
           "      var controls = document.createElement('div');" +
           "      controls.className = 'group'; controls.id = 'annotationControls';" +
-          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Toggle Highlight Mode\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Toggle Comment Mode\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight Tool\">🖌️</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Comment Tool\">💬</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Panel\">📋</button>';" +
           "      searchGroup.parentNode.insertBefore(controls, searchGroup.nextSibling);" +
           "    }" +
           "    var searchResults = document.getElementById('searchResults');" +
@@ -328,16 +328,15 @@
           "      filters: document.querySelectorAll('.anno-filters .rbtn')" +
           "    };" +
           "    setupListeners();" +
-          "    setupObserver();" +
           "  }" +
           "  function setupListeners() {" +
           "    if (!nodes.highlightBtn) return;" +
           "    nodes.highlightBtn.onclick = function() {" +
-          "      if (state.activeMode === 'highlight') { state.activeMode = null; } else { state.activeMode = 'highlight'; }" +
+          "      state.activeMode = (state.activeMode === 'highlight') ? null : 'highlight';" +
           "      updateModeButtons();" +
           "    };" +
           "    nodes.commentBtn.onclick = function() {" +
-          "      if (state.activeMode === 'comment') { state.activeMode = null; } else { state.activeMode = 'comment'; }" +
+          "      state.activeMode = (state.activeMode === 'comment') ? null : 'comment';" +
           "      updateModeButtons();" +
           "    };" +
           "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; nodes.panelBtn.classList.toggle('active', open); if(open) renderList(); };" +
@@ -345,47 +344,104 @@
           "    nodes.filters.forEach(function(btn) { btn.onclick = function() { nodes.filters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
           "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; state.activeMode = null; updateModeButtons(); };" +
           "    nodes.popoverSave.onclick = saveComment;" +
-          "    nodes.viewerArea.addEventListener('mouseup', handleSelectionEvent);" +
-          "    nodes.viewerArea.addEventListener('keyup', handleSelectionEvent);" +
+          "    document.addEventListener('selectionchange', handleGlobalSelection);" +
           "  }" +
           "  function updateModeButtons() {" +
           "    nodes.highlightBtn.classList.toggle('active', state.activeMode === 'highlight');" +
           "    nodes.commentBtn.classList.toggle('active', state.activeMode === 'comment');" +
-          "    if (state.activeMode === null) {" +
-          "      nodes.popover.style.display = 'none';" +
-          "    }" +
+          "    if (!state.activeMode) nodes.popover.style.display = 'none';" +
           "  }" +
-          "  function handleSelectionEvent() {" +
+          "  function handleGlobalSelection() {" +
           "    if (!state.activeMode) return;" +
           "    var sel = window.getSelection();" +
           "    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;" +
-          "    var range = sel.getRangeAt(0), text = sel.toString().trim();" +
-          "    if (!text) return;" +
-          "    var el = range.commonAncestorContainer; if (el.nodeType === Node.TEXT_NODE) el = el.parentNode;" +
-          "    var pageSlot = el.closest('.page-slot'), pageNum = pageSlot ? parseInt(pageSlot.dataset.page, 10) : null;" +
-          "    if (!pageNum) {" +
-          "      var currentInput = document.getElementById('pageInput');" +
-          "      if (currentInput) pageNum = parseInt(currentInput.value, 10);" +
-          "    }" +
-          "    state.currentSelection = { text: text, page: pageNum || 1 };" +
+          "    var range = sel.getRangeAt(0);" +
+          "    var text = sel.toString().trim();" +
+          "    if (text.length < 2) return;" +
+          "    state.liveRange = {" +
+          "      range: range.cloneRange()," +
+          "      text: text," +
+          "      container: range.commonAncestorContainer" +
+          "    };" +
+          "    executeActiveAnnotation();" +
+          "  }" +
+          "  function executeActiveAnnotation() {" +
+          "    if (!state.liveRange) return;" +
           "    if (state.activeMode === 'highlight') {" +
           "      saveHighlight();" +
           "    } else if (state.activeMode === 'comment') {" +
-          "      var rect = range.getBoundingClientRect();" +
+          "      var rect = state.liveRange.range.getBoundingClientRect();" +
           "      var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
           "      nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
           "      nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
-          "      nodes.popover.style.display = 'flex'; nodes.popoverText.value = ''; nodes.popoverText.focus();" +
+          "      nodes.popover.style.display = 'flex';" +
+          "      nodes.popoverText.value = '';" +
+          "      nodes.popoverText.focus();" +
+          "      document.getSelection().removeAllRanges();" +
           "    }" +
           "  }" +
           "  function saveHighlight() {" +
-          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'highlight', text: state.currentSelection.text, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
+          "    var pNum = findSelectionPage(state.liveRange.container);" +
+          "    var wrapper = document.createElement('mark');" +
+          "    wrapper.className = 'kap-highlight-overlay';" +
+          "    try {" +
+          "      state.liveRange.range.surroundContents(wrapper);" +
+          "    } catch(e) {" +
+          "      var spans = extractRangeSpans(state.liveRange.range);" +
+          "      spans.forEach(function(s) { s.classList.add('kap-highlight-overlay'); });" +
+          "    }" +
+          "    state.annotations.push({" +
+          "      id: 'a_' + Date.now()," +
+          "      type: 'highlight'," +
+          "      text: state.liveRange.text," +
+          "      page: pNum," +
+          "      timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})" +
+          "    });" +
+          "    state.liveRange = null;" +
+          "    document.getSelection().removeAllRanges();" +
+          "    renderList();" +
           "  }" +
           "  function saveComment() {" +
-          "    var val = nodes.popoverText.value.trim(); if(!val) return;" +
-          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.currentSelection.text, comment: val, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    nodes.popover.style.display = 'none'; state.activeMode = null; updateModeButtons(); window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
+          "    var val = nodes.popoverText.value.trim(); if (!val) return;" +
+          "    var pNum = findSelectionPage(state.liveRange.container);" +
+          "    var wrapper = document.createElement('mark');" +
+          "    wrapper.className = 'kap-highlight-overlay';" +
+          "    try {" +
+          "      state.liveRange.range.surroundContents(wrapper);" +
+          "    } catch(e) {" +
+          "      var spans = extractRangeSpans(state.liveRange.range);" +
+          "      spans.forEach(function(s) { s.classList.add('kap-highlight-overlay'); });" +
+          "    }" +
+          "    state.annotations.push({" +
+          "      id: 'a_' + Date.now()," +
+          "      type: 'comment'," +
+          "      text: state.liveRange.text," +
+          "      comment: val," +
+          "      page: pNum," +
+          "      timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})" +
+          "    });" +
+          "    nodes.popover.style.display = 'none';" +
+          "    state.liveRange = null;" +
+          "    state.activeMode = null;" +
+          "    updateModeButtons();" +
+          "    renderList();" +
+          "  }" +
+          "  function findSelectionPage(node) {" +
+          "    var el = node.nodeType === Node.TEXT_NODE ? node.parentNode : node;" +
+          "    var slot = el.closest('.page-slot');" +
+          "    if (slot) return parseInt(slot.dataset.page, 10);" +
+          "    var inp = document.getElementById('pageInput');" +
+          "    return inp ? parseInt(inp.value, 10) : 1;" +
+          "  }" +
+          "  function extractRangeSpans(range) {" +
+          "    var match = [];" +
+          "    var el = range.commonAncestorContainer;" +
+          "    if (el.nodeType === Node.TEXT_NODE) el = el.parentNode;" +
+          "    var all = el.querySelectorAll ? el.querySelectorAll('span') : [];" +
+          "    all.forEach(function(s) {" +
+          "      if (range.intersectsNode(s)) match.push(s);" +
+          "    });" +
+          "    return match;" +
           "  }" +
           "  function renderList() {" +
           "    nodes.panelList.innerHTML = '';" +
@@ -407,26 +463,9 @@
           "          }, 150);" +
           "        }" +
           "      };" +
-          "      card.querySelector('.anno-del').onclick = function(e) { e.stopPropagation(); state.annotations = state.annotations.filter(function(x){return x.id!==a.id;}); applyToDOM(); renderList(); };" +
+          "      card.querySelector('.anno-del').onclick = function(e) { e.stopPropagation(); state.annotations = state.annotations.filter(function(x){return x.id!==a.id;}); renderList(); };" +
           "      nodes.panelList.appendChild(card);" +
           "    });" +
-          "  }" +
-          "  function applyToDOM() {" +
-          "    state.annotations.forEach(function(a) {" +
-          "      var slots = document.querySelectorAll('.page-slot');" +
-          "      slots.forEach(function(slot) {" +
-          "        var layer = slot.querySelector('.textLayer'); if(!layer) return;" +
-          "        layer.querySelectorAll('span').forEach(function(span) {" +
-          "          if(span.textContent.includes(a.text) && a.text.length > 2 && !span.classList.contains('kap-highlight-overlay')) {" +
-          "            span.classList.add('kap-highlight-overlay');" +
-          "          }" +
-          "        });" +
-          "      });" +
-          "    });" +
-          "  }" +
-          "  function setupObserver() {" +
-          "    var viewer = document.getElementById('pdfViewer'); if(!viewer) return;" +
-          "    new MutationObserver(function() { applyToDOM(); }).observe(viewer, { childList: true, subtree: true });" +
           "  }" +
           "  setTimeout(initAnnoEngine, 800);" +
           "})();" +
