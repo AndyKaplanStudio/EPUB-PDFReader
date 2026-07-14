@@ -226,10 +226,162 @@
 
         // 2. Decode the variables securely
         var rawReaderHtml = atob(READER_B64);
-        var stylesToInject = atob(styleB64);
-        var scriptToInject = "<script>" + atob(scriptB64) + "<\/script>";
+docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
+        var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
+        pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
 
-        // 3. Inject new layout architecture elements safely inside structural HTML boundaries
+        // 1. Setup layout configuration rules using safe concatenated strings
+        var stylesToInject = "" +
+          "#annotationPanel {" +
+          "  position: absolute; top: 0; right: 0; bottom: 0; width: 320px; max-width: 82%;" +
+          "  background: #fff; border-left: 1px solid var(--kap-line); box-shadow: -2px 0 14px rgba(34,33,33,.10);" +
+          "  z-index: 16; display: none; flex-direction: column;" +
+          "}" +
+          "#annotationPanel.open { display: flex; }" +
+          ".anno-filters { padding: 10px 14px; border-bottom: 1px solid var(--kap-line); display: flex; gap: 6px; background: var(--kap-col-bg); }" +
+          ".anno-filters .rbtn { padding: 5px 10px; font-size: 12px; }" +
+          ".anno-item { padding: 12px; border-bottom: 1px solid var(--kap-line); position: relative; cursor: pointer; transition: background 0.12s; }" +
+          ".anno-item:hover { background: var(--kap-col-bg); }" +
+          ".anno-item .anno-type-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }" +
+          ".anno-item .badge-highlight { background: rgba(255, 235, 59, 0.4); color: #857c00; }" +
+          ".anno-item .badge-comment { background: rgba(36, 15, 110, 0.1); color: var(--kap-purple); }" +
+          ".anno-item .anno-text { font-style: italic; color: var(--kap-muted); font-size: 13px; line-height: 1.4; margin-bottom: 4px; border-left: 2px solid var(--kap-line); padding-left: 6px; }" +
+          ".anno-item .anno-comm { font-size: 13px; color: var(--kap-text); font-weight: 600; margin-bottom: 4px; }" +
+          ".anno-item .anno-meta { font-size: 11px; color: var(--kap-muted); }" +
+          ".anno-item .anno-del { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #8b0000; cursor: pointer; font-size: 14px; opacity: 0.4; transition: opacity 0.15s; padding: 4px; }" +
+          ".anno-item:hover .anno-del { opacity: 1; }" +
+          ".kap-highlight-overlay { background-color: rgba(255, 235, 59, 0.45) !important; border-bottom: 1px dashed #fbc02d; position: relative; cursor: pointer; }" +
+          "#annoPopover {" +
+          "  position: absolute; background: #fff; border: 1px solid var(--kap-line); border-radius: 12px;" +
+          "  box-shadow: 0 4px 18px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; display: none; width: 260px;" +
+          "  flex-direction: column; gap: 8px; font-family: 'Open Sans', sans-serif;" +
+          "}" +
+          "#annoPopover textarea { width: 100%; border: 1px solid var(--kap-line); border-radius: 8px; padding: 8px; font-size: 13px; resize: none; outline: none; }" +
+          "#annoPopover textarea:focus { border-color: var(--kap-purple); }" +
+          "#annoPopover .pop-actions { display: flex; justify-content: flex-end; gap: 6px; }" +
+          "#annoPopover button { padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }" +
+          "#annoPopover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }" +
+          "#annoPopover .btn-save { background: var(--kap-purple); color: #fff; }";
+
+        var scriptToInject = "" +
+          "<script>" +
+          "(function() {" +
+          "  'use strict';" +
+          "  var state = { annotations: [], activeFilter: 'all', cachedSelection: null };" +
+          "  var nodes = {};" +
+          "  function initAnnoEngine() {" +
+          "    var toolbar = document.getElementById('toolbar');" +
+          "    if (toolbar) {" +
+          "      var controls = document.createElement('div');" +
+          "      controls.className = 'group'; controls.id = 'annotationControls';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight Selected Text\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
+          "      toolbar.appendChild(controls);" +
+          "    }" +
+          "    var stage = document.getElementById('stage');" +
+          "    if (stage) {" +
+          "      var panel = document.createElement('div'); panel.id = 'annotationPanel';" +
+          "      panel.innerHTML = '<div class=\"sr-head\"><span class=\"sr-title\">Annotations</span><button class=\"sr-close\" id=\"annoPanelClose\">&times;</button></div><div class=\"anno-filters\"><button class=\"rbtn active\" data-filter=\"all\">All</button><button class=\"rbtn\" data-filter=\"highlight\">Highlights</button><button class=\"rbtn\" data-filter=\"comment\">Comments</button></div><div class=\"sr-list\" id=\"annoPanelList\"></div>';" +
+          "      stage.appendChild(panel);" +
+          "      var popover = document.createElement('div'); popover.id = 'annoPopover';" +
+          "      popover.innerHTML = '<div style=\"font-weight:600; font-size:12px; color:var(--kap-purple);\">Add Comment:</div><textarea id=\"popoverText\" rows=\"3\" placeholder=\"Type a note...\"></textarea><div class=\"pop-actions\"><button class=\"btn-cancel\" id=\"popoverCancel\">Cancel</button><button class=\"btn-save\" id=\"popoverSave\">Save</button></div>';" +
+          "      stage.appendChild(popover);" +
+          "    }" +
+          "    nodes = {" +
+          "      highlightBtn: document.getElementById('annoHighlightBtn')," +
+          "      commentBtn: document.getElementById('annoCommentBtn')," +
+          "      panelBtn: document.getElementById('annoPanelBtn')," +
+          "      panel: document.getElementById('annotationPanel')," +
+          "      panelClose: document.getElementById('annoPanelClose')," +
+          "      panelList: document.getElementById('annoPanelList')," +
+          "      popover: document.getElementById('annoPopover')," +
+          "      popoverText: document.getElementById('popoverText')," +
+          "      popoverCancel: document.getElementById('popoverCancel')," +
+          "      popoverSave: document.getElementById('popoverSave')," +
+          "      viewerArea: document.getElementById('viewerArea')," +
+          "      filters: document.querySelectorAll('.anno-filters .rbtn')" +
+          "    };" +
+          "    setupListeners();" +
+          "  }" +
+          "  function setupListeners() {" +
+          "    if (!nodes.highlightBtn) return;" +
+          "    nodes.highlightBtn.onmousedown = function(e) { e.preventDefault(); captureSelection(); saveHighlight(); };" +
+          "    nodes.commentBtn.onmousedown = function(e) { e.preventDefault(); captureSelection(); showCommentPopover(); };" +
+          "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; if(open) renderList(); };" +
+          "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; };" +
+          "    nodes.filters.forEach(function(btn) { btn.onclick = function() { nodes.filters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
+          "    nodes.popoverSave.onclick = saveComment;" +
+          "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
+          "  }" +
+          "  function captureSelection() {" +
+          "    var sel = window.getSelection();" +
+          "    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {" +
+          "      var range = sel.getRangeAt(0);" +
+          "      state.cachedSelection = { range: range.cloneRange(), text: sel.toString().trim(), container: range.commonAncestorContainer };" +
+          "    } else { state.cachedSelection = null; }" +
+          "  }" +
+          "  function saveHighlight() {" +
+          "    if (!state.cachedSelection) { alert('Please select some text inside the document first.'); return; }" +
+          "    var anno = { id: 'a_'+Date.now(), type: 'highlight', text: state.cachedSelection.text, page: findPage(state.cachedSelection.container), timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };" +
+          "    state.annotations.push(anno); applyVisuals(); renderList();" +
+          "  }" +
+          "  function showCommentPopover() {" +
+          "    if (!state.cachedSelection) { alert('Please select some text inside the document first.'); return; }" +
+          "    var rect = state.cachedSelection.range.getBoundingClientRect();" +
+          "    var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
+          "    nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
+          "    nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
+          "    nodes.popover.style.display = 'flex'; nodes.popoverText.value = ''; nodes.popoverText.focus();" +
+          "  }" +
+          "  function saveComment() {" +
+          "    var val = nodes.popoverText.value.trim(); if (!val) return;" +
+          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.cachedSelection.text, comment: val, page: findPage(state.cachedSelection.container), timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
+          "    nodes.popover.style.display = 'none'; applyVisuals(); renderList();" +
+          "  }" +
+          "  function findPage(node) {" +
+          "    var el = node.nodeType === 3 ? node.parentNode : node;" +
+          "    var slot = el.closest('.page-slot'); return slot ? parseInt(slot.dataset.page, 10) : 1;" +
+          "  }" +
+          "  function applyVisuals() {" +
+          "    state.annotations.forEach(function(a) {" +
+          "      document.querySelectorAll('.page-slot').forEach(function(slot) {" +
+          "        slot.querySelectorAll('.textLayer span').forEach(function(span) {" +
+          "          if ((a.text.indexOf(span.textContent) !== -1 || span.textContent.indexOf(a.text) !== -1) && a.text.length > 1) span.classList.add('kap-highlight-overlay');" +
+          "        });" +
+          "      });" +
+          "    });" +
+          "  }" +
+          "  function renderList() {" +
+          "    nodes.panelList.innerHTML = '';" +
+          "    var filtered = state.annotations.filter(function(a) { return state.activeFilter === 'all' || a.type === state.activeFilter; });" +
+          "    if (!filtered.length) { nodes.panelList.innerHTML = '<div class=\"sr-empty\">No annotations found.</div>'; return; }" +
+          "    filtered.forEach(function(a) {" +
+          "      var card = document.createElement('div'); card.className = 'anno-item';" +
+          "      var commentTextStr = a.comment ? String(a.comment).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';" +
+          "      var textContentStr = a.text ? String(a.text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';" +
+          "      var commentHtml = a.type === 'comment' ? '<div class=\"anno-comm\">' + commentTextStr + '</div>' : '';" +
+          "      card.innerHTML = '<span class=\"anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'\">'+a.type+'</span><button class=\"anno-del\">&times;</button><div class=\"anno-text\">\"'+textContentStr+'\"</div>'+commentHtml+'<div class=\"anno-meta\">Page '+a.page+'</div>';" +
+          "      card.onclick = function() {" +
+          "        var inp = document.getElementById('pageInput'); if(inp && a.page) {" +
+          "          inp.value = a.page; inp.dispatchEvent(new Event('change'));" +
+          "          setTimeout(function() {" +
+          "            var slot = document.querySelector(\".page-slot[data-page=\'\" + a.page + \"\']\");" +
+          "            if (slot) slot.scrollIntoView({ behavior: 'smooth', block: 'start' });" +
+          "          }, 150);" +
+          "        }" +
+          "      };" +
+          "      card.querySelector('.anno-del').onclick = function(e) { e.stopPropagation(); state.annotations = state.annotations.filter(function(x){return x.id!==a.id;}); renderList(); };" +
+          "      nodes.panelList.appendChild(card);" +
+          "    });" +
+          "  }" +
+          "  setTimeout(initAnnoEngine, 1000);" +
+          "  var viewer = document.getElementById('pdfViewer'); if(viewer) { new MutationObserver(applyVisuals).observe(viewer, { childList: true, subtree: true }); }" +
+          "})();" +
+          "<\/script>";
+
+        // 2. Decode the raw reader code safely
+        var rawReaderHtml = atob(READER_B64);
+
+        // 3. Inject scripts and styles inside structural HTML boundaries
         rawReaderHtml = rawReaderHtml.replace('</head>', '<style>' + stylesToInject + '</style></head>');
         rawReaderHtml = rawReaderHtml.replace('</body>', scriptToInject + '</body>');
 
@@ -240,15 +392,6 @@
         return zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
           function(meta){ genBtn.textContent='Compressing… '+Math.round(meta.percent)+'%'; });
       });
-    }).then(function(blob){
-      var url = URL.createObjectURL(blob);
-      var a=document.createElement('a'); a.href=url; a.download=folder+'.zip';
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-      log('✓ Done — '+folder+'.zip ('+fmtSize(blob.size)+') downloaded.','ok');
-      genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)';
-    });
-  }
   // End of annotation
     }).then(function(blob){
       var url = URL.createObjectURL(blob);
