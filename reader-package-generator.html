@@ -267,7 +267,7 @@ return libFetches.then(function(){
         var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
         pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
 
-        // 1. Setup layout configuration rules using safe concatenated strings
+// 1. Setup layout configuration rules using safe concatenated strings
         var stylesToInject = "" +
           "#annotationPanel {" +
           "  position: absolute; top: 0; right: 0; bottom: 0; width: 320px; max-width: 82%;" +
@@ -310,7 +310,7 @@ return libFetches.then(function(){
           "    var toolbar = document.getElementById('toolbar');" +
           "    if (toolbar) {" +
           "      var controls = document.createElement('div'); controls.className = 'group'; controls.id = 'annotationControls';" +
-          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"List\">\uD83D\uDCCB</button>';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight\">🖌️</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Comment\">💬</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"List\">📋</button>';" +
           "      toolbar.appendChild(controls);" +
           "    }" +
           "    var stage = document.getElementById('stage');" +
@@ -376,14 +376,9 @@ return libFetches.then(function(){
           "})();" +
           "<\/script>";
 
-        // 2. Decode the raw code frame securely
         var rawReaderHtml = atob(READER_B64);
-
-        // 3. Perform string injection inside structural boundaries
         rawReaderHtml = rawReaderHtml.replace('</head>', '<style>' + stylesToInject + '</style></head>');
         rawReaderHtml = rawReaderHtml.replace('</body>', scriptToInject + '</body>');
-
-        // 4. Queue back into zip package archive 
         pkg.file('index.html', rawReaderHtml);
         pkg.file('README.txt', readme(name, folder, type, bundle));
         log('Compressing package…');
