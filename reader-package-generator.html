@@ -214,12 +214,7 @@
         docCfg = { libs:[LIB_URLS.jszip, LIB_URLS.pdf, LIB_URLS.epub], libsFallback:[], workerSrc:LIB_URLS.worker };
       }
 // begining of annotation
-return libFetches.then(function(){
-        docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
-        var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
-        pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
-
-        // 1. Injected styles using safe template string literals
+// 1. Setup layout configuration rules using safe concatenated strings
         var stylesToInject = "" +
           "#annotationPanel {" +
           "  position: absolute; top: 0; right: 0; bottom: 0; width: 320px; max-width: 82%;" +
@@ -258,9 +253,15 @@ return libFetches.then(function(){
           "  'use strict';" +
           "  var state = { annotations: [], activeFilter: 'all', localSelection: null };" +
           "  var nodes = {};" +
+          "  function findGlobalElement(id) {" +
+          "    return document.getElementById(id) || " +
+          "           (window.parent && window.parent.document.getElementById(id)) ||" +
+          "           (window.top && window.top.document.getElementById(id));" +
+          "  }" +
           "  function initAnnoEngine() {" +
-          "    var toolbar = document.getElementById('toolbar');" +
+          "    var toolbar = findGlobalElement('toolbar');" +
           "    if (!toolbar) return;" +
+          "    if (findGlobalElement('annotationControls')) return;" +
           "    var controls = document.createElement('div');" +
           "    controls.className = 'group'; controls.id = 'annotationControls';" +
           "    " +
@@ -271,7 +272,7 @@ return libFetches.then(function(){
           "    controls.appendChild(b1); controls.appendChild(b2); controls.appendChild(b3);" +
           "    toolbar.appendChild(controls);" +
           "    " +
-          "    var stage = document.getElementById('stage');" +
+          "    var stage = findGlobalElement('stage');" +
           "    if (stage) {" +
           "      var panel = document.createElement('div'); panel.id = 'annotationPanel';" +
           "      panel.innerHTML = '<div class=\"sr-head\"><span class=\"sr-title\">Annotations</span><button class=\"sr-close\" id=\"annoPanelClose\">&times;</button></div><div class=\"anno-filters\"><button class=\"rbtn active\" data-filter=\"all\">All</button><button class=\"rbtn\" data-filter=\"highlight\">Highlights</button><button class=\"rbtn\" data-filter=\"comment\">Comments</button></div><div class=\"sr-list\" id=\"annoPanelList\"></div>';" +
@@ -282,14 +283,14 @@ return libFetches.then(function(){
           "    }" +
           "    nodes = {" +
           "      highlightBtn: b1, commentBtn: b2, panelBtn: b3," +
-          "      panel: document.getElementById('annotationPanel')," +
-          "      panelClose: document.getElementById('annoPanelClose')," +
-          "      panelList: document.getElementById('annoPanelList')," +
-          "      popover: document.getElementById('annoPopover')," +
-          "      popoverText: document.getElementById('popoverText')," +
-          "      popoverCancel: document.getElementById('popoverCancel')," +
-          "      popoverSave: document.getElementById('popoverSave')," +
-          "      viewerArea: document.getElementById('viewerArea')," +
+          "      panel: findGlobalElement('annotationPanel')," +
+          "      panelClose: findGlobalElement('annoPanelClose')," +
+          "      panelList: findGlobalElement('annoPanelList')," +
+          "      popover: findGlobalElement('annoPopover')," +
+          "      popoverText: findGlobalElement('popoverText')," +
+          "      popoverCancel: findGlobalElement('popoverCancel')," +
+          "      popoverSave: findGlobalElement('popoverSave')," +
+          "      viewerArea: findGlobalElement('viewerArea')," +
           "      filters: document.querySelectorAll('.anno-filters .rbtn')" +
           "    };" +
           "    setupListeners();" +
@@ -298,13 +299,14 @@ return libFetches.then(function(){
           "    nodes.highlightBtn.onclick = function() { saveHighlight(); };" +
           "    nodes.commentBtn.onclick = function() { showCommentPopover(); };" +
           "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; if(open) renderList(); };" +
-          "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; };" +
-          "    nodes.filters.forEach(function(btn) { btn.onclick = function() { nodes.filters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
-          "    nodes.popoverSave.onclick = saveComment;" +
-          "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
+          "    if(nodes.panelClose) nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; };" +
+          "    var fallbackFilters = findGlobalElement('annotationPanel') ? findGlobalElement('annotationPanel').querySelectorAll('.anno-filters .rbtn') : [];" +
+          "    fallbackFilters.forEach(function(btn) { btn.onclick = function() { fallbackFilters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
+          "    if(nodes.popoverSave) nodes.popoverSave.onclick = saveComment;" +
+          "    if(nodes.popoverCancel) nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
           "    " +
-          "    // Safe Local Event Trackers - bypasses file:/// CORS validation restrictions completely" +
-          "    document.addEventListener('mouseup', function(e) {" +
+          "    var targetDoc = (window.parent && window.parent.document) || document;" +
+          "    targetDoc.addEventListener('mouseup', function(e) {" +
           "      var targetSpan = e.target.closest('.textLayer span');" +
           "      if (targetSpan) {" +
           "        var txt = targetSpan.textContent.trim();" +
@@ -317,12 +319,12 @@ return libFetches.then(function(){
           "    });" +
           "  }" +
           "  function saveHighlight() {" +
-          "    if (!state.localSelection) { alert('Please click or highlight a text line inside the document first.'); return; }" +
+          "    if (!state.localSelection) { alert('Please click a text line inside the document first.'); return; }" +
           "    var anno = { id: 'a_'+Date.now(), type: 'highlight', text: state.localSelection.text, page: state.localSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };" +
           "    state.annotations.push(anno); state.localSelection = null; applyVisuals(); renderList();" +
           "  }" +
           "  function showCommentPopover() {" +
-          "    if (!state.localSelection) { alert('Please click or highlight a text line inside the document first.'); return; }" +
+          "    if (!state.localSelection) { alert('Please click a text line inside the document first.'); return; }" +
           "    var rect = state.localSelection.rect;" +
           "    var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
           "    nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
@@ -335,8 +337,9 @@ return libFetches.then(function(){
           "    nodes.popover.style.display = 'none'; state.localSelection = null; applyVisuals(); renderList();" +
           "  }" +
           "  function applyVisuals() {" +
+          "    var docCtx = (window.parent && window.parent.document) || document;" +
           "    state.annotations.forEach(function(a) {" +
-          "      document.querySelectorAll('.page-slot').forEach(function(slot) {" +
+          "      docCtx.querySelectorAll('.page-slot').forEach(function(slot) {" +
           "        slot.querySelectorAll('.textLayer span').forEach(function(span) {" +
           "          if ((a.text.indexOf(span.textContent) !== -1 || span.textContent.indexOf(a.text) !== -1) && a.text.length > 1) span.classList.add('kap-highlight-overlay');" +
           "        });" +
@@ -344,9 +347,11 @@ return libFetches.then(function(){
           "    });" +
           "  }" +
           "  function renderList() {" +
-          "    nodes.panelList.innerHTML = '';" +
+          "    var listContainer = findGlobalElement('annoPanelList');" +
+          "    if(!listContainer) return;" +
+          "    listContainer.innerHTML = '';" +
           "    var filtered = state.annotations.filter(function(a) { return state.activeFilter === 'all' || a.type === state.activeFilter; });" +
-          "    if (!filtered.length) { nodes.panelList.innerHTML = '<div class=\"sr-empty\">No annotations found.</div>'; return; }" +
+          "    if (!filtered.length) { listContainer.innerHTML = '<div class=\"sr-empty\">No annotations found.</div>'; return; }" +
           "    filtered.forEach(function(a) {" +
           "      var card = document.createElement('div'); card.className = 'anno-item';" +
           "      var commentTextStr = a.comment ? String(a.comment).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';" +
@@ -354,20 +359,22 @@ return libFetches.then(function(){
           "      var commentHtml = a.type === 'comment' ? '<div class=\"anno-comm\">' + commentTextStr + '</div>' : '';" +
           "      card.innerHTML = '<span class=\"anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'\">'+a.type+'</span><button class=\"anno-del\">&times;</button><div class=\"anno-text\">\"'+textContentStr+'\"</div>'+commentHtml+'<div class=\"anno-meta\">Page '+a.page+'</div>';" +
           "      card.onclick = function() {" +
-          "        var inp = document.getElementById('pageInput'); if(inp && a.page) {" +
+          "        var docCtx = (window.parent && window.parent.document) || document;" +
+          "        var inp = docCtx.getElementById('pageInput'); if(inp && a.page) {" +
           "          inp.value = a.page; inp.dispatchEvent(new Event('change'));" +
           "          setTimeout(function() {" +
-          "            var slot = document.querySelector(\".page-slot[data-page=\'\" + a.page + \"\']\");" +
+          "            var slot = docCtx.querySelector(\".page-slot[data-page=\'\" + a.page + \"\']\");" +
           "            if (slot) slot.scrollIntoView({ behavior: 'smooth', block: 'start' });" +
           "          }, 150);" +
           "        }" +
           "      };" +
           "      card.querySelector('.anno-del').onclick = function(e) { e.stopPropagation(); state.annotations = state.annotations.filter(function(x){return x.id!==a.id;}); renderList(); };" +
-          "      nodes.panelList.appendChild(card);" +
+          "      listContainer.appendChild(card);" +
           "    });" +
           "  }" +
-          "  setTimeout(initAnnoEngine, 1000);" +
-          "  var viewer = document.getElementById('pdfViewer'); if(viewer) { new MutationObserver(applyVisuals).observe(viewer, { childList: true, subtree: true }); }" +
+          "  setInterval(initAnnoEngine, 1000);" +
+          "  var docCtx = (window.parent && window.parent.document) || document;" +
+          "  var viewer = docCtx.getElementById('pdfViewer'); if(viewer) { new MutationObserver(applyVisuals).observe(viewer, { childList: true, subtree: true }); }" +
           "})();" +
           "<\/script>";
 
