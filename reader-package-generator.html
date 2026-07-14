@@ -308,14 +308,13 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "<script>" +
           "(function() {" +
           "  'use strict';" +
-          "  var state = { annotations: [], activeFilter: 'all', currentSelection: null };" +
+          "  var state = { annotations: [], activeFilter: 'all', backupText: '', backupPage: 1, backupRect: null };" +
           "  var nodes = {};" +
           "  function initAnnoEngine() {" +
           "    var toolbar = document.getElementById('toolbar');" +
           "    if (toolbar) {" +
-          "      var controls = document.createElement('div');" +
-          "      controls.className = 'group'; controls.id = 'annotationControls';" +
-          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show panel\">\uD83D\uDCCB</button>';" +
+          "      var controls = document.createElement('div'); controls.className = 'group'; controls.id = 'annotationControls';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight\">🖌️</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Comment\">💬</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"List\">📋</button>';" +
           "      toolbar.appendChild(controls);" +
           "    }" +
           "    var stage = document.getElementById('stage');" +
@@ -323,20 +322,7 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "      var panel = document.createElement('div'); panel.id = 'annotationPanel'; panel.innerHTML = '<div class=\"sr-head\"><span class=\"sr-title\">Annotations</span><button class=\"sr-close\" id=\"annoPanelClose\">&times;</button></div><div class=\"anno-filters\"><button class=\"rbtn active\" data-filter=\"all\">All</button><button class=\"rbtn\" data-filter=\"highlight\">Highlights</button><button class=\"rbtn\" data-filter=\"comment\">Comments</button></div><div class=\"sr-list\" id=\"annoPanelList\"></div>'; stage.appendChild(panel);" +
           "      var popover = document.createElement('div'); popover.id = 'annoPopover'; popover.innerHTML = '<div style=\"font-weight:600; font-size:12px; color:var(--kap-purple);\">Add Comment:</div><textarea id=\"popoverText\" rows=\"3\" placeholder=\"Type a note...\"></textarea><div class=\"pop-actions\"><button class=\"btn-cancel\" id=\"popoverCancel\">Cancel</button><button class=\"btn-save\" id=\"popoverSave\">Save</button></div>'; stage.appendChild(popover);" +
           "    }" +
-          "    nodes = {" +
-          "      highlightBtn: document.getElementById('annoHighlightBtn')," +
-          "      commentBtn: document.getElementById('annoCommentBtn')," +
-          "      panelBtn: document.getElementById('annoPanelBtn')," +
-          "      panel: document.getElementById('annotationPanel')," +
-          "      panelClose: document.getElementById('annoPanelClose')," +
-          "      panelList: document.getElementById('annoPanelList')," +
-          "      popover: document.getElementById('annoPopover')," +
-          "      popoverText: document.getElementById('popoverText')," +
-          "      popoverCancel: document.getElementById('popoverCancel')," +
-          "      popoverSave: document.getElementById('popoverSave')," +
-          "      viewerArea: document.getElementById('viewerArea')," +
-          "      filters: document.querySelectorAll('.anno-filters .rbtn')" +
-          "    };" +
+          "    nodes = { highlightBtn: document.getElementById('annoHighlightBtn'), commentBtn: document.getElementById('annoCommentBtn'), panelBtn: document.getElementById('annoPanelBtn'), panel: document.getElementById('annotationPanel'), panelClose: document.getElementById('annoPanelClose'), panelList: document.getElementById('annoPanelList'), popover: document.getElementById('annoPopover'), popoverText: document.getElementById('popoverText'), popoverCancel: document.getElementById('popoverCancel'), popoverSave: document.getElementById('popoverSave'), viewerArea: document.getElementById('viewerArea'), filters: document.querySelectorAll('.anno-filters .rbtn') };" +
           "    setupListeners();" +
           "  }" +
           "  function setupListeners() {" +
@@ -347,30 +333,28 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; };" +
           "    nodes.popoverSave.onclick = saveComment;" +
           "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
-          "    nodes.viewerArea.addEventListener('mouseup', function() { setTimeout(trackUserSelection, 20); });" +
-          "    nodes.viewerArea.addEventListener('keyup', function() { setTimeout(trackUserSelection, 20); });" +
-          "  }" +
-          "  function trackUserSelection() {" +
-          "    var sel = window.getSelection();" +
-          "    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {" +
-          "      var text = sel.toString().trim();" +
-          "      if (text.length > 0) {" +
-          "        var range = sel.getRangeAt(0);" +
-          "        var el = range.commonAncestorContainer; if (el.nodeType === 3) el = el.parentNode;" +
-          "        var slot = el.closest('.page-slot');" +
-          "        var pageNum = slot ? parseInt(slot.dataset.page, 10) : 1;" +
-          "        state.currentSelection = { text: text, page: pageNum, rect: range.getBoundingClientRect() };" +
+          "    document.addEventListener('selectionchange', function() {" +
+          "      var sel = window.getSelection();" +
+          "      if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {" +
+          "        var range = sel.getRangeAt(0); var text = sel.toString().trim();" +
+          "        if (text.length > 0) {" +
+          "          var el = range.commonAncestorContainer; if (el.nodeType === 3) el = el.parentNode;" +
+          "          var slot = el.closest('.page-slot');" +
+          "          state.backupText = text;" +
+          "          state.backupPage = slot ? parseInt(slot.dataset.page, 10) : 1;" +
+          "          state.backupRect = range.getBoundingClientRect();" +
+          "        }" +
           "      }" +
-          "    }" +
+          "    });" +
           "  }" +
           "  function saveHighlight() {" +
-          "    if (!state.currentSelection) { alert('Please select some text inside the document first.'); return; }" +
-          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'highlight', text: state.currentSelection.text, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    state.currentSelection = null; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
+          "    if (!state.backupText) { alert('Please select some text inside the document first.'); return; }" +
+          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'highlight', text: state.backupText, page: state.backupPage, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
+          "    state.backupText = ''; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
           "  }" +
           "  function showCommentPopover() {" +
-          "    if (!state.currentSelection) { alert('Please select some text inside the document first.'); return; }" +
-          "    var rect = state.currentSelection.rect;" +
+          "    if (!state.backupText) { alert('Please select some text inside the document first.'); return; }" +
+          "    var rect = state.backupRect;" +
           "    var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
           "    nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
           "    nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
@@ -378,8 +362,8 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "  }" +
           "  function saveComment() {" +
           "    var val = nodes.popoverText.value.trim(); if (!val) return;" +
-          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.currentSelection.text, comment: val, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    nodes.popover.style.display = 'none'; state.currentSelection = null; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
+          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.backupText, comment: val, page: state.backupPage, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
+          "    nodes.popover.style.display = 'none'; state.backupText = ''; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
           "  }" +
           "  function applyVisuals() {" +
           "    state.annotations.forEach(function(a) {" +
@@ -397,8 +381,7 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "      card.innerHTML = '<span class=\"anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'\">'+a.type+'</span><button class=\"anno-del\">&times;</button><div class=\"anno-text\">\"'+a.text+'\"</div>' + (a.comment?'<div class=\"anno-comm\">'+a.comment+'</div>':'') + '<div class=\"anno-meta\">Page '+a.page+'</div>';" +
           "      card.onclick = function() {" +
           "        var inp = document.getElementById('pageInput'); if(inp && a.page) {" +
-          "          inp.value = a.page;" +
-          "          inp.dispatchEvent(new Event('change'));" +
+          "          inp.value = a.page; inp.dispatchEvent(new Event('change'));" +
           "          setTimeout(function() {" +
           "            var slot = document.querySelector(\".page-slot[data-page=\'\" + a.page + \"\']\");" +
           "            if (slot) slot.scrollIntoView({ behavior: 'smooth', block: 'start' });" +
@@ -410,7 +393,7 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
           "    });" +
           "  }" +
           "  setTimeout(initAnnoEngine, 1000);" +
-          "  new MutationObserver(applyVisuals).observe(document.getElementById('pdfViewer'), { childList: true, subtree: true });" +
+          "  var viewer = document.getElementById('pdfViewer'); if (viewer) { new MutationObserver(applyVisuals).observe(viewer, { childList: true, subtree: true }); }" +
           "})();" +
           "<\/script>";
 
