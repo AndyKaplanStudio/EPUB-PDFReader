@@ -271,21 +271,157 @@ docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
         var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
         pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
 
-        // 1. Pre-compiled Base64 layout bundles to bypass server-side firewalls cleanly
-        var styleB64 = "LyogQW5ub3RhdGlvbiBFbmdpbmUgU3R5bGVzICovCiNhbm5vdGF0aW9uUGFuZWwgewogIHBvc2l0aW9uOiBhYnNvbHV0ZTsgdG9wOiAwOyByaWdodDogMDsgYm90dG9tOiAwOyB3aWR0aDogMzIwcHg7IG1heC13aWR0aDogODIlOwogIGJhY2tncm91bmQ6ICNmZmY7IGJvcmRlci1sZWZ0OiAxcHggc29saWQgdmFyKC0ta2FwLWxpbmUpOyBib3gtc2hhZG93OiAtMnB4IDAgMTRweCByZ2JhKDM0LDMzLDMzLC4xMCk7CiAgei1pbmRleDogMTY7IGRpc3BsYXk6IG5vbmU7IGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47Cn0KI2Fubm90YXRpb25QYW5lbC5vcGVuIHsgZGlzcGxheTogZmxleDsgfQouYW5uby1maWx0ZXJzIHsgcGFkZGluZzogMTBweCAxNHB4OyBib3JkZXItYm90dG9tOiA1cHggc29saWQgdmFyKC0ta2FwLWxpbmUpOyBkaXNwbGF5OiBmbGV4OyBnYXA6IDZweDsgYmFja2dyb3VuZDogdmFyKC0ta2FwLWNvbC1iZyk7IH0KLmFubm8tZmlsdGVycyAucmJ0biB7IHBhZGRpbmc6IDVweCAxMHB4OyBmb250LXNpemU6IDEycHg7IH0KLmFubm8taXRlbSB7IHBhZGRpbmc6IDEycHg7IGJvcmRlci1ib3R0b206IDFweCBzb2xpZCB2YXIoLS1rYXAtbGluZSk7IHBvc2l0aW9uOiByZWxhdGl2ZTsgY3Vyc29yOiBwb2ludGVyOyB0cmFuc2l0aW9uOiBiYWNrZ3JvdW5kIDAuMTJzOyB9Ci5hbm5vLWl0ZW06aG92ZXIgeyBiYWNrZ3JvdW5kOiB2YXIoLS1rYXAtY29sLWJnKTsgfQouYW5uby1pdGVtIC5hbm5vLXR5cGUtYmFkZ2UgeyBmb250LXNpemU6IDEwcHg7IGZvbnQtd2VpZ2h0OiA3MDA7IHRleHQtdHJhbnNmb3JtOiB1cHBlcmNhc2U7IGxldHRlci1zcGFjaW5nOiAwLjVweDsgcGFkZGluZzogMnB4IDZweDsgYm9yZGVyLXJhZGl1czogNHB4OyBkaXNwbGF5OiBpbmxpbmUtYmxvY2s7IG1hcmdpbi1ib3R0b206IDZweDsgfQouYW5uby1pdGVtIC5iYWRnZS1oaWdobGlnaHQgeyBiYWNrZ3JvdW5kOiByZ2JhKDI1NSwgMjM1LCA1OSwgMC40KTsgY29sb3I6ICM4NTdjMDA7IH0KLmFubm8taXRlbSAuYmFkZ2UtY29tbWVudCB7IGJhY2tncm91bmQ6IHJnYmEoMzYsIDE1LCAxMTAsIDAuMSk7IGNvbHVtbjogdmFyKC0ta2FwLXB1cnBsZSk7IH0KLmFubm8taXRlbSAuYW5uby10ZXh0IHsgZm9udC1zdHlsZTogaXRhbGljOyBjb2xvcjogdmFyKC0ta2FwLW11dGVkKTsgZm9udC1zaXplOiAxM3B4OyBsaW5lLWhlaWdodDogMS40OyBtYXJnaW4tYm90dG9tOiA0cHg7IGJvcmRlci1sZWZ0OiAycHggc29saWQgdmFyKC0ta2FwLWxpbmUpOyBwYWRkaW5nLWxlZnQ6IDZweDsgfQouYW5uby1pdGVtIC5hbm5vLWNvbW0geyBmb250LXNpemU6IDEzcHg7IGNvbG9yOiB2YXIoLS1rYXAtdGV4dCk7IGZvbnQtd2VpZ2h0OiA2MDA7IG1hcmdpbi1ib3R0b206IDRweDsgfQouYW5uby1pdGVtIC5hbm5vLW1ldGEgeyBmb250LXNpemU6IDExcHg7IGNvbG9yOiB2YXIoLS1rYXAtYXV0ZWQpOyB9Ci5hbm5vLWl0ZW0gLmFubm8tZGVsIHsgcG9zaXRpb246IGFic29sdXRlOyB0b3A6IDEwcHg7IHp5Z2h0OiAxMHB4OyBiYWNrZ3JvdW5kOiBub25lOyBib3JkZXI6IG5vbmU7IGNvbG9yOiAjOGIwMDAwOyBjdXJzb3I6IHBvaW50ZXI7IGZvbnQtc2l6ZTogMTRweDsgb3BhY2l0eTogMC40OyB0cmFuc2l0aW9uOiBvcGFjaXR5IDAuMTVzOyBwYWRkaW5nOiA0cHg7IH0KLmFubm8taXRlbToob3ZlciAuYW5uby1kZWwgeyBvcGFjaXR5OiAxOyB9Ci5rYXAtaGlnaGxpZ2h0LW92ZXJsYXkeyBiYWNrZ3JvdW5kLWNvbG9yOiByZ2JhKDI1NSwgMjM1LCA1OSwgMC40NSkgIWltcG9ydGFudDsgYm9yZGVyLWJvdHRvbTogMXB4IGRhc2hlZCAjZmJjMDJkOyBwb3NpdGlvbjogcmVsYXRpdmU7IGN1cnNvcjogcG9pbnRlcjsgfQojYW5ub1Bvdm92ZXIgewogIHBvc2l0aW9uOiBhYnNvbHV0ZTsgYmFja2dyb3VuZDogI2ZmZjsgYm9yZGVyOiAxcHggc29saWQgdmFyKC0ta2FwLWxpbmUpOyBib3JkZXItcmFkaXVzOiAxMnB4OyBBMm94LXNoYWRvdzogMCA0cHggMThweCByZ2JhKDAsMCwwLDALjE1KTsgcGFkZGluZzogMTJweDsgei1pbmRleDogOTk5OTsgZGlzcGxheTogbm9uZTsgd2lkdGg6IDI2MHB4OwogIGZsZXgtZGlyZWN0aW9uOiBjb2x1bW47IGdhcDogOHB4OyBmb250LWZhbWlseTogJ09wZW4gU2FucycsIHNhbnMtc2VyaWY7Cn0KIWFubm9Qb3ZvdmVyIHRleHRhcmVhIHsgd2lkdGg6IDEwMCU7IGJvcmRlcjogMXB4IHzb2xpZCB2YXIoLS1rYXAtbGluZSk7IGJvcmRlci1yYWRpdXM6IDhweDsgcGFkZGluZzogOHB4OyBmb250LXNpemU6IDEzcHg7IHJlc2l6ZTogbm9uZTsgb3V0bGluZTogbm9uZTsgfQojYW5ub1Bvdm92ZXIgdGV4dGFyZWE6Zm9jdXMgeyBib3JkZXItY29sb3I6IHZhciYjNDA7LS1rYXAtcHVycGxlJiM0MTs7IH0KIWFubm9Qb3ZvdmVyIC5wb3AtYWN0aW9ucyB7IGRpc3BsYXk6IGZsZXg7IGp1c3RpZnktY29udGVudDogZmxleC1lbmQ7IGdhcDogNnB4OyB9CiNhbm5vUG92ZXZlciBidXR0b24geyBwYWRkaW5nOiA1cHggMTYweDsgZm9udC1zaXplOiAxMnB4OyBYm9yZGVyLXJhZGl1czogNnB4OyBjdXJzb3I6IHBvaW50ZXI7IGZvbnQtd2VpZ2h0OiA2MDA7IGJvcmRlcjogbm9uZTsgfQojYW5ub1Bvdm92ZXIgLmJ0bi1jYW5jZWwgeyBiYWNrZ3JvdW5kOiB2YXIoLS1rYXAtY29sLWJnKTsgY29sb3I6IHZhciYjNDA7LS1rYXAtdGV4dCYjNDE7OyB9CiNhbm5vUG92ZXZlciAuYnRuLXNhdmUgeyBiYWNrZ3JvdW5kOiB2YXIoLS1rYXAtYHVycGxlKTsgY29sb3I6ICNmZmY7IH0=";
-        
-        var scriptB64 = "KGZ1bmN0aW9uKCkgewogICAndXNlIHN0cmljdCc7CiAgIHZhciBzdGF0ZSA9IHsgYW5ub3RhdGlvbnM6IFtdLCBjYWNoZWRTZWxlY3Rpb246IG51bGwgfTsKICAgdmFyIG5vZGVzID0ge307CiAgIGZ1bmN0aW9uIGluaXRBbm5vRW5naW5lKCkgewogICAgIHZhciB0b29sYmFyID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3Rvb2xiYXInKTsKICAgICBpZiAodG9vbGJhcikgewogICAgICAgdmFyIGNvbnRyb2xzID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnZGl2Jyk7IGNvbnRyb2xzLmNsYXNzTmFtZSA9ICdncm91cCc7IGNvbnRyb2xzLmlkID0gJ2Fubm90YXRpb25Db250cm9scyc7CiAgICAgICBjb250cm9scy5pbm5lckhUTUwgPSAnPGJ1dHRvbiBjbGFzcz0icmJ0biBpY29uIiBpZD0iYW5ub0hpZ2hsaWdodEJ0biIgdGl0bGU9IkhpZ2hsaWdodCI+8J2Vlu+4jy8YnV0dG9uPjxidXR0b24gY2xhc3M9InJidG4gaWNvbiIgaWQ9ImFubm9Db21tZW50QnRuIiB0aXRsZT0iQ29tbWVudCI+8J+QrDwvYnV0dG9uPjxidXR0b24gY2xhc3M9InJidG4gaWNvbiIgaWQ9ImFubm9QYW5lbEJ0biIgdGl0bGU9Ikxpc3QiPvCfkLg8L2J1dHRvbj4nZsCiAgICAgICB0b29sYmFyLmFwcGVuZENoaWxkKGNvbnRyb2xzKTsKICAgICB9CiAgICAgdmFyIHN0YWdlID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3N0YWdlJyk7CiAgICAgaWYgKHN0YWdlKSB7CiAgICAgICB2YXIgcGFuZWwgPSBkb2N1bWVudC5jcmVhdGVFbGVtZW50KCdkaXYnKTsgcGFuZWwuaWQgPSAnYW5ub3RhdGlvblBhbmVsJzsgcGFuZWwuaW5uZXJIVE1MID0gJzxkaXYgY2xhc3M9InNyLWhlYWQiPjxzcGFuIGNsYXNzPSJzci10aXRsZSI+QW5ub3RhdGlvbnM8L3NwYW4+PGJ1dHRvbiBjbGFzcz0icmJ0biBzci1jbG9zZSIgaWQ9ImFubm9QYW5lbENsb3NlIj4mdGltZXM7PC9idXR0b24+PC9kaXY+PGRpdiBjbGFzcz0iYW5uby1maWx0ZXJzIj48YnV0dG9uIGNsYXNzPSJyYnRuIGFjdGl2ZSIgZGF0YS1maWx0ZXI9ImFsbCI+QWxsPC9idXR0b24+PGJ1dHRvbiBjbGFzcz0icmJ0biIgZGF0YS1maWx0ZXI9ImhpZ2hsaWdodCI+SGlnaGxpZ2h0czwvYnV0dG9uPjxidXR0b24gY2xhc3M9InJidG4iIGRhdGEtZmlsdGVyPSJjb21tZW50Ij5Db21tZW50czwvYnV0dG9uPjwvZGl2PjxkaXYgY2xhc3M9InNyLWxpc3QiIGlkPSJhbm5vUGFuZWxMaXN0Ij48L2Rpdj4nOyBzdGFnZS5hcHBlbmRDaGlsZChwYW5lbCk7CiAgICAgICB2YXIgcG9wb3ZlciA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOyBwb3BvdmVyLmlkID0gJ2Fubm9Qb3ZvdmVyJzsgcG9wb3Zlci5pbm5lckhUTUwgPSAnPGRpdiBzdHlsZT0iZm9udC13ZWlnaHQ6NjAwOyBmb250LXNpemU6MTJweDsgY29sb3I6dmFyKC0ta2FwLXB1cnBsZSk7Ij5BZGQgQ29tbWVudDo8L2Rpdj48dGV4dGFyZWEgaWQ9InBvcG92ZXJUZXh0IiByb3dzPSIzIiBwbGFjZWhvbGRlcj0iVHlwZSBhIG5vdGUuLi4iPjwvdGV4dGFyZWE+PGRpdiBjbGFzcz0icG9wLWFjdGlvbnMiPjxidXR0b24gY2xhc3M9ImJ0bi1jYW5jZWwiIGlkPSJwb3BvdmVyQ2FuY2VsIj5DYW5jZWw8L2J1dHRvbj48YnV0dG9uIGNsYXNzPSJidG4tc2F2ZSIgaWQ9InBvcG92ZXJTYXZlIj5TYXZlPC9idXR0b24+PC9kaXY+Jzsgc3RhZ2UuYXBwZW5kQ2hpbGQocG9wb3Zlcik7CiAgICAgfQogICAgIG5vZGVzID0geyBoaWdobGlnaHRCdG46IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdhbm5vSGlnaGxpZ2h0QnRuJyksIGNvbW1lbnRCdG46IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdhbm5vQ29tbWVudEJ0bicpLCBwYW5lbEJ0bjogZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2Fubm9QYW5lbEJ0bicpLCBwYW5lbDogZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2Fubm90YXRpb25QYW5lbCcpLCBwYW5lbENsb3NlOiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYW5ub1BhbmVsQ2xvc2UnKSwgcGFuZWxMaXN0OiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYW5ub1BhbmVsTGlzdCcpLCBwb3BvdmVyOiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYW5ub1BhbmVsUG9wb3ZlcicpLCBwb3BvdmVyVGV4dDogZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3BvcG92ZXJUZXh0JyksIHBvcG92ZXJDYW5jZWw6IGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKydwb3BvdmVyQ2FuY2VsJyksIHBvcG92ZXJTYXZlOiBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncG9wb3ZlclNhdmUnKSwgdmlld2VyQXJlYTogZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3ZpZXdlckFyZWEnKSB9OwogICAgIHNldHVwTGlzdGVuZXJzKCk7CiAgIH0KICAgZnVuY3Rpb24gc2V0dXBMaXN0ZW5lcnMoKSB7CiAgICAgaWYgKCFub2Rlcy5oaWdobGlnaHRCdG4pIHJldHVybjsKICAgICBub2Rlcy5oaWdobGlnaHRCdG4ub25tb3VzZWRvd24gPSBmdW5jdGlvbihlKSB7IGUucHJldmVudERlZmF1bHQoKTsgY2FwdHVyZVNlbGVjdGlvbigpOyBzYXZlSGlnaGxpZ2h0KCk7IH07CiAgICAgbm9kZXMuY29tbWVudEJ0bi5vbm1vdXNlZG93biA9IGZ1bmN0aW9uKGUpIHsgZS5wcmV2ZW50RGVmYXVsdCgpOyBjYXB0dXJlU2VsZWN0aW9uKCk7IHNob3dDb21tZW50UG9wb3ZlcigpOyB9OwogICAgIG5vZGVzLnBhbmVsQnRuLm9uY2xpY2sgPSBmdW5jdGlvbigpIHsgdmFyIG9wZW4gPSBub2Rlcy5wYW5lbC5zdHlsZS5kaXNwbGF5ICE9PSAnZmxleCc7IG5vZGVzLnBhbmVsLnN0eWxlLmRpc3BsYXkgPSBvcGVuID8gJ2ZsZXgnIDogJ25vbmUnOyBpZihvcGVuKSByZW5kZXJMaXN0KCk7IH07CiAgICAgbm9kZXMucGFuZWxDbG9zZS5vbmNsaWNrID0gZnVuY3Rpb24oKSB7IG5vZGVzLnBhbmVsLnN0eWxlLmRpc3BsYXkgPSAnbm9uZSc7IH07CiAgICAgbm9kZXMucG9wb3ZlclNhdmUub25jbGljayA9IHNhdmVDb21tZW50OwogICAgIG5vZGVzLnBvcG92ZXJDYW5jZWwub25jbGljayA9IGZ1bmN0aW9uKCkgeyBub2Rlcy5wb3BvdmVyLnN0eWxlLmRpc3BsYXkgPSAnbm9uZSc7IH07CiAgIH0KICAgZnVuY3Rpb24gY2FwdHVyZVNlbGVjdGlvbigpIHsKICAgICB2YXIgc2VsID0gd2luZG93LmdldFNlbGVjdGlvbigpOwogICAgIGlmIChzZWwgJiYgc2VsLnJhbmdlQ291bnQgPiAwICYmICFzZWwuaXNDb2xsYXBzZWQpIHsKICAgICAgIHZhciByYW5nZSA9IHNlbC5nZXRSYW5nZUF0KDApOwogICAgICAgc3RhdGUuY2FjaGVkU2VsZWN0aW9uID0geyByYW5nZTogcmFuZ2UsIHRleHQ6IHNlbC50b1N0cmluZygpLnRyaW0oKSwgY29udGFpbmVyOiByYW5nZS5jb21tb25BbmNlc3RvckNvbnRhaW5lciB9OwogICAgIH0gZWxzZSB7IHN0YXRlLmNhY2hlZFNlbGVjdGlvbiA9IG51bGw7IH0KICAgfQogICBmdW5jdGlvbiBzYXZlSGlnaGxpZ2h0KCkgewogICAgIGlmICghc3RhdGUuY2FjaGVkU2VsZWN0aW9uKSB7IGFsZXJ0KCdQbGVhc2Ugc2VsZWN0IHRleHQgaW5zaWRlIHRoZSBkb2N1bWVudCBmaXJzdC4nKTsgcmV0dXJuOyB9CiAgICAgdmFyIGFubm8gPSB7IGlkOiAnYV8nK0RhdGUubm93KCksIHR5cGU6ICdoaWdobGlnaHQnLCB0ZXh0OiBzdGF0ZS5jYWNoZWRTZWxlY3Rpb24udGV4dCwgcGFnZTogZmluZFBhZ2Uoc3RhdGUuY2FjaGVkU2VsZWN0aW9uLmNvbnRhaW5lciksIHRpbWVzdGFtcDogbmV3IERhdGUoKS5sb2NhbGVUaW1lU3RyaW5nKCkgfTsKICAgICBzdGF0ZS5hbm5vdGF0aW9ucy5wdXNoKGFubm8pOyBhcHBseVZpc3VhbHMoKTsgcmVuZGVyTGlzdCgpOwogICB9CiAgIGZ1bmN0aW9uIHNob3dDb21tZW50UG9wb3ZlcigpIHsKICAgICBpZiAoIXN0YXRlLmNhY2hlZFNlbGVjdGlvbikgeyBhbGVydCgnUGxlYXNlIHNlbGVjdCB0ZXh0IGluc2lkZSB0aGUgZG9jdW1lbnQgZmlyc3QuJyk7IHcmZHVybjsgfQogICAgIHZhciByZWN0ID0gc3RhdGUuY2FjaGVkU2VsZWN0aW9uLnJhbm crappy5nZXRCb3VuZGluZ0NsaWVudFJlY3QoKTsKICAgICB2YXIgdmlld2VyUmVjdCA9IG5vZGVzLnZpZXdlckFyZWEuZ2V0Qm91bmRpbmdDbGllbnRSZWN0KCk7CiAgICAgbm9kZXMucG9wb3Zlci5zdHlsZS5sZWZ0ID0gKHJlY3QubGVmdCAtIHZpZXdlclJlY3QubGVmdCArIG5vZGVzLnZpZXdlckFyZWEuc2Nyb2xsTGVmdCkgKyAncHgnOwogICAgIG5vZGVzLnBvcG92ZXIuc3R5bGUudG9wID0gKHJlY3QuYm90dG9tIC0gdmlld2VyUmVjdC50b3AgKyBub2Rlcy52aWV3ZXJBcmVhLnNjcm9sbFRvcCArIDgpICsgJ3B4JzsKICAgICBub2Rlcy5wb3BvdmVyLnN0eWxlLmRpc3BsYXkgPSAnZmxleCc7IG5vZGVzLnBvcG92ZXJUZXh0LnZhbHVlID0gJyc7IG5vZGVzLnBvcG92ZXJUZXh0LmZvY3VzKCk7CiAgIH0KICAgZnVuY3Rpb24gc2F2ZUNvbW1lbnQoKSB7CiAgICAgdmFyIHZhbCA9IG5vZGVzLnBvcG92ZXJUZXh0LnZhbHVlLnRyaW0oKTsgaWYgKCF2YWwpIHJldHVybjsKICAgICBzdGF0ZS5hbm5vdGF0aW9ucy5wdXNoKHsgaWQ6ICdhXycrRGF0ZS5ub3coKCksIHR5cGU6ICdjb21tZW50JywgdGV4dDogc3RhdGUuY2FjaGVkU2VsZWN0aW9uLnRleHQsIGNvbW1lbnQ6IHZhbCwgcGFnZTogZmluZFBhZ2Uoc3RhdGUuY2FjaGVkU2VsZWN0aW9uLmNvbnRhaW5lciksIHRpbWVzdGFtcDogbmV3IERhdGUoKS5sb2NhbGVUaW1lU3RyaW5nKCkgfSk7CiAgICAgbm9kZXMucG9wb3Zlci5zdHlsZS5kaXNwbGF5ID0gJ25vbmUnOyBhcHBseVZpc3VhbHMoKTsgcmVuZGVyTGlzdCgpOwogICB9CiAgIGZ1bmN0aW9uIGZpbmRQYWdlKG5vZGUpIHsKICAgICB2YXIgZWwgPSBub2RlLm5vZGVUeXBlID09PSAzID8gbm9kZS5wYXJlbnROb2RlIDogbm9kZTsKICAgICB2YXIgc2xvdCA9IGVsLmNsb3Nlc3QoJy5wYWdlLXNsb3QnKTsgcmV0dXJuIHNsb3QgPyBwYXJzZUludChzbG90LmRhdGFzZXQucGFnZSwgMTApIDogMTsKICAgfQogICBmdW5jdGlvbiBhcHBseVZpc3VhbHMoKSB7CiAgICAgc3RhdGUuYW5ub3RhdGlvbnMuZm9yRWFjaChmdW5jdGlvbihhKSB7CiAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCcucGFnZS1zbG90JykuZm9yRWFjaChmdW5jdGlvbihzbG90KSB7CiAgICAgICAgIHNsb3QucXVlcnlTZWxlY3RvckFsbCgnLnRleHRMYXllciBzcGFuJykuZm9yRWFjaChmdW5jdGlvbihzcGFuKSB7CiAgICAgICAgICAgaWYgKHNwYW4udGV4dENvbnRlbnQuaW5jbHVkZXMoYS50ZXh0KSAmJiBhLnRleHQubGVuZ3RoID4gMikgc3Bhbi5jbGFzc0xpc3QuYWRkKCdrYXAtaGhpZ2hsaWdodC1vdmVybGF5Jyk7CiAgICAgICAgIH0pOwogICAgICAgfSk7CiAgICAgfSk7CiAgIH0KICAgZnVuY3Rpb24gcmVuZGVyTGlzdCgpIHsKICAgICBub2Rlcy5wYW5lbExpc3QuaW5uZXJIVE1MID0gJyc7CiAgICAgc3RhdGUuYW5ub3RhdGlvbnMuZm9yRWFjaChmdW5jdGlvbihhKSB7CiAgICAgICB2YXIgY2FyZCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoJ2RpdicpOyBjYXJkLmNsYXNzTmFtZSA9ICdhbm5vLWl0ZW0nOwogICAgICAgY2FyZC5pbm5lckhUTUwgPSAnPHNwYW4gY2xhc3M9ImFubm8tdHlwZS1iYWRnZSAwKyhhLnR5cGU9PT0naGlnaGxpZ2h0JyUnYmFkZ2UtaGlnaGxpZ2h0JzonYmFkZ2UtY29tbWVudCcpKyciPicrYS50eXBlKyc8L3NwYW4+PGJ1dHRvbiBjbGFzcz0iYW5uby1kZWwiPiZ0aW1lczs8L2J1dHRvbj48ZGl2IGNsYXNzPSJhbm5vLXRleHQiPiImIzk2OycrYS50ZXh0KyciJiM5Njs8L2Rpdj4nKyhhLmNvbW1lbnQ/JzxkaXYgY2xhc3M9ImFubm8tY29tbSI+JythLmNvbW1lbnQrJzwvZGl2Pic6JycpKyc8ZGl2IGNsYXNzPSJhbm5vLW1ldGEiPlBhZ2UgJythLnBhZ2UrJzwvZGl2Pic7CiAgICAgICBjYXJkLnF1ZXJ5U2VsZWN0b3IoJy5hbm5vLWRlbCcpLm9uY2xpY2sgPSBmdW5jdGlvbigpIHsgc3RhdGUuYW5ub3RhdGlvbnMgPSBzdGF0ZS5hbm5vdGF0aW9ucy5maWx0ZXIgKGZ1bmN0aW9uKHgpe3JldHVybiB4LmlkIT09YS5pZDt9KTsgcmVuZGVyTGlzdCgpOyB9OwogICAgICAgbm9kZXMucGFuZWxMaXN0LmFwcGVuZENoaWxkKGNhcmQpOwogICAgIH0pOyAgIH0KICAgc2V0VGltZW91dChpbml0QW5ub0VuZ2luZSwgMTAwMCk7CiAgIG5ldyBNdXRhdGlvbk9ic2VydmVyKGFwcGx5VmlzdWFscykub2JzZXJ2ZShkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncGRmVmlld2VyJyksIHsgY2hpbGRMaXN0OiB0cnVlLCBzdWJ0cmVlOiB0cnVlIH0pOwp9KSgpOw==";
+// 1. Setup layout configuration rules using safe concatenated strings
+        var stylesToInject = "" +
+          "#annotationPanel {" +
+          "  position: absolute; top: 0; right: 0; bottom: 0; width: 320px; max-width: 82%;" +
+          "  background: #fff; border-left: 1px solid var(--kap-line); box-shadow: -2px 0 14px rgba(34,33,33,.10);" +
+          "  z-index: 16; display: none; flex-direction: column;" +
+          "}" +
+          "#annotationPanel.open { display: flex; }" +
+          ".anno-filters { padding: 10px 14px; border-bottom: 1px solid var(--kap-line); display: flex; gap: 6px; background: var(--kap-col-bg); }" +
+          ".anno-filters .rbtn { padding: 5px 10px; font-size: 12px; }" +
+          ".anno-item { padding: 12px; border-bottom: 1px solid var(--kap-line); position: relative; cursor: pointer; transition: background 0.12s; }" +
+          ".anno-item:hover { background: var(--kap-col-bg); }" +
+          ".anno-item .anno-type-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }" +
+          ".anno-item .badge-highlight { background: rgba(255, 235, 59, 0.4); color: #857c00; }" +
+          ".anno-item .badge-comment { background: rgba(36, 15, 110, 0.1); color: var(--kap-purple); }" +
+          ".anno-item .anno-text { font-style: italic; color: var(--kap-muted); font-size: 13px; line-height: 1.4; margin-bottom: 4px; border-left: 2px solid var(--kap-line); padding-left: 6px; }" +
+          ".anno-item .anno-comm { font-size: 13px; color: var(--kap-text); font-weight: 600; margin-bottom: 4px; }" +
+          ".anno-item .anno-meta { font-size: 11px; color: var(--kap-muted); }" +
+          ".anno-item .anno-del { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #8b0000; cursor: pointer; font-size: 14px; opacity: 0.4; transition: opacity 0.15s; padding: 4px; }" +
+          ".anno-item:hover .anno-del { opacity: 1; }" +
+          ".kap-highlight-overlay { background-color: rgba(255, 235, 59, 0.45) !important; border-bottom: 1px dashed #fbc02d; position: relative; cursor: pointer; }" +
+          "#annoPopover {" +
+          "  position: absolute; background: #fff; border: 1px solid var(--kap-line); border-radius: 12px;" +
+          "  box-shadow: 0 4px 18px rgba(0,0,0,0.15); padding: 12px; z-index: 9999; display: none; width: 260px;" +
+          "  flex-direction: column; gap: 8px; font-family: 'Open Sans', sans-serif;" +
+          "}" +
+          "#annoPopover textarea { width: 100%; border: 1px solid var(--kap-line); border-radius: 8px; padding: 8px; font-size: 13px; resize: none; outline: none; }" +
+          "#annoPopover textarea:focus { border-color: var(--kap-purple); }" +
+          "#annoPopover .pop-actions { display: flex; justify-content: flex-end; gap: 6px; }" +
+          "#annoPopover button { padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; }" +
+          "#annoPopover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }" +
+          "#annoPopover .btn-save { background: var(--kap-purple); color: #fff; }";
 
-        // 2. Decode the raw code frame securely
+        var scriptToInject = "" +
+          "<script>" +
+          "(function() {" +
+          "  'use strict';" +
+          "  var state = { annotations: [], activeFilter: 'all', currentSelection: null };" +
+          "  var nodes = {};" +
+          "  function initAnnoEngine() {" +
+          "    var toolbar = document.getElementById('toolbar');" +
+          "    if (toolbar) {" +
+          "      var controls = document.createElement('div');" +
+          "      controls.className = 'group'; controls.id = 'annotationControls';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show panel\">\uD83D\uDCCB</button>';" +
+          "      toolbar.appendChild(controls);" +
+          "    }" +
+          "    var stage = document.getElementById('stage');" +
+          "    if (stage) {" +
+          "      var panel = document.createElement('div'); panel.id = 'annotationPanel'; panel.innerHTML = '<div class=\"sr-head\"><span class=\"sr-title\">Annotations</span><button class=\"sr-close\" id=\"annoPanelClose\">&times;</button></div><div class=\"anno-filters\"><button class=\"rbtn active\" data-filter=\"all\">All</button><button class=\"rbtn\" data-filter=\"highlight\">Highlights</button><button class=\"rbtn\" data-filter=\"comment\">Comments</button></div><div class=\"sr-list\" id=\"annoPanelList\"></div>'; stage.appendChild(panel);" +
+          "      var popover = document.createElement('div'); popover.id = 'annoPopover'; popover.innerHTML = '<div style=\"font-weight:600; font-size:12px; color:var(--kap-purple);\">Add Comment:</div><textarea id=\"popoverText\" rows=\"3\" placeholder=\"Type a note...\"></textarea><div class=\"pop-actions\"><button class=\"btn-cancel\" id=\"popoverCancel\">Cancel</button><button class=\"btn-save\" id=\"popoverSave\">Save</button></div>'; stage.appendChild(popover);" +
+          "    }" +
+          "    nodes = {" +
+          "      highlightBtn: document.getElementById('annoHighlightBtn')," +
+          "      commentBtn: document.getElementById('annoCommentBtn')," +
+          "      panelBtn: document.getElementById('annoPanelBtn')," +
+          "      panel: document.getElementById('annotationPanel')," +
+          "      panelClose: document.getElementById('annoPanelClose')," +
+          "      panelList: document.getElementById('annoPanelList')," +
+          "      popover: document.getElementById('annoPopover')," +
+          "      popoverText: document.getElementById('popoverText')," +
+          "      popoverCancel: document.getElementById('popoverCancel')," +
+          "      popoverSave: document.getElementById('popoverSave')," +
+          "      viewerArea: document.getElementById('viewerArea')," +
+          "      filters: document.querySelectorAll('.anno-filters .rbtn')" +
+          "    };" +
+          "    setupListeners();" +
+          "  }" +
+          "  function setupListeners() {" +
+          "    if (!nodes.highlightBtn) return;" +
+          "    nodes.highlightBtn.onclick = function() { saveHighlight(); };" +
+          "    nodes.commentBtn.onclick = function() { showCommentPopover(); };" +
+          "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; if(open) renderList(); };" +
+          "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; };" +
+          "    nodes.popoverSave.onclick = saveComment;" +
+          "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
+          "    nodes.viewerArea.addEventListener('mouseup', function() { setTimeout(trackUserSelection, 20); });" +
+          "    nodes.viewerArea.addEventListener('keyup', function() { setTimeout(trackUserSelection, 20); });" +
+          "  }" +
+          "  function trackUserSelection() {" +
+          "    var sel = window.getSelection();" +
+          "    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {" +
+          "      var text = sel.toString().trim();" +
+          "      if (text.length > 0) {" +
+          "        var range = sel.getRangeAt(0);" +
+          "        var el = range.commonAncestorContainer; if (el.nodeType === 3) el = el.parentNode;" +
+          "        var slot = el.closest('.page-slot');" +
+          "        var pageNum = slot ? parseInt(slot.dataset.page, 10) : 1;" +
+          "        state.currentSelection = { text: text, page: pageNum, rect: range.getBoundingClientRect() };" +
+          "      }" +
+          "    }" +
+          "  }" +
+          "  function saveHighlight() {" +
+          "    if (!state.currentSelection) { alert('Please select some text inside the document first.'); return; }" +
+          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'highlight', text: state.currentSelection.text, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
+          "    state.currentSelection = null; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
+          "  }" +
+          "  function showCommentPopover() {" +
+          "    if (!state.currentSelection) { alert('Please select some text inside the document first.'); return; }" +
+          "    var rect = state.currentSelection.rect;" +
+          "    var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
+          "    nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
+          "    nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
+          "    nodes.popover.style.display = 'flex'; nodes.popoverText.value = ''; nodes.popoverText.focus();" +
+          "  }" +
+          "  function saveComment() {" +
+          "    var val = nodes.popoverText.value.trim(); if (!val) return;" +
+          "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.currentSelection.text, comment: val, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
+          "    nodes.popover.style.display = 'none'; state.currentSelection = null; window.getSelection().removeAllRanges(); applyVisuals(); renderList();" +
+          "  }" +
+          "  function applyVisuals() {" +
+          "    state.annotations.forEach(function(a) {" +
+          "      document.querySelectorAll('.page-slot').forEach(function(slot) {" +
+          "        slot.querySelectorAll('.textLayer span').forEach(function(span) {" +
+          "          if (span.textContent.includes(a.text) && a.text.length > 2) span.classList.add('kap-highlight-overlay');" +
+          "        });" +
+          "      });" +
+          "    });" +
+          "  }" +
+          "  function renderList() {" +
+          "    nodes.panelList.innerHTML = '';" +
+          "    state.annotations.forEach(function(a) {" +
+          "      var card = document.createElement('div'); card.className = 'anno-item';" +
+          "      card.innerHTML = '<span class=\"anno-type-badge '+(a.type==='highlight'?'badge-highlight':'badge-comment')+'\">'+a.type+'</span><button class=\"anno-del\">&times;</button><div class=\"anno-text\">\"'+a.text+'\"</div>' + (a.comment?'<div class=\"anno-comm\">'+a.comment+'</div>':'') + '<div class=\"anno-meta\">Page '+a.page+'</div>';" +
+          "      card.onclick = function() {" +
+          "        var inp = document.getElementById('pageInput'); if(inp && a.page) {" +
+          "          inp.value = a.page;" +
+          "          inp.dispatchEvent(new Event('change'));" +
+          "          setTimeout(function() {" +
+          "            var slot = document.querySelector(\".page-slot[data-page=\'\" + a.page + \"\']\");" +
+          "            if (slot) slot.scrollIntoView({ behavior: 'smooth', block: 'start' });" +
+          "          }, 150);" +
+          "        }" +
+          "      };" +
+          "      card.querySelector('.anno-del').onclick = function(e) { e.stopPropagation(); state.annotations = state.annotations.filter(function(x){return x.id!==a.id;}); renderList(); };" +
+          "      nodes.panelList.appendChild(card);" +
+          "    });" +
+          "  }" +
+          "  setTimeout(initAnnoEngine, 1000);" +
+          "  new MutationObserver(applyVisuals).observe(document.getElementById('pdfViewer'), { childList: true, subtree: true });" +
+          "})();" +
+          "<\/script>";
+
+        // 2. Decode the raw reader code safely
         var rawReaderHtml = atob(READER_B64);
-        var stylesToInject = atob(styleB64);
-        var scriptToInject = "<script>" + atob(scriptB64) + "<\/script>";
 
-        // 3. Perform string injection inside structural boundaries
+        // 3. Inject scripts and styles inside structural boundaries
         rawReaderHtml = rawReaderHtml.replace('</head>', '<style>' + stylesToInject + '</style></head>');
         rawReaderHtml = rawReaderHtml.replace('</body>', scriptToInject + '</body>');
 
-        // 4. Queue back into zip package archive
+        // 4. Queue back into zip package archive safely
         pkg.file('index.html', rawReaderHtml);
   // End of Annotation
         pkg.file('README.txt', readme(name, folder, type, bundle));
