@@ -291,14 +291,14 @@
           "<script>" +
           "(function() {" +
           "  'use strict';" +
-          "  var state = { annotations: [], activeFilter: 'all', currentSelection: null };" +
+          "  var state = { annotations: [], activeFilter: 'all', activeMode: null, currentSelection: null };" +
           "  var nodes = {};" +
           "  function initAnnoEngine() {" +
           "    var searchGroup = document.getElementById('search') ? document.getElementById('search').parentNode : null;" +
           "    if (searchGroup) {" +
           "      var controls = document.createElement('div');" +
           "      controls.className = 'group'; controls.id = 'annotationControls';" +
-          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Highlight Selected Text\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Add Comment\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
+          "      controls.innerHTML = '<button class=\"rbtn icon\" id=\"annoHighlightBtn\" title=\"Toggle Highlight Mode\">\uD83D\uDD8C\uFE0F</button><button class=\"rbtn icon\" id=\"annoCommentBtn\" title=\"Toggle Comment Mode\">\uD83D\uDCAC</button><button class=\"rbtn icon\" id=\"annoPanelBtn\" title=\"Show Annotations\">\uD83D\uDCCB</button>';" +
           "      searchGroup.parentNode.insertBefore(controls, searchGroup.nextSibling);" +
           "    }" +
           "    var searchResults = document.getElementById('searchResults');" +
@@ -332,43 +332,50 @@
           "  }" +
           "  function setupListeners() {" +
           "    if (!nodes.highlightBtn) return;" +
-          "    nodes.highlightBtn.onmousedown = function(e) { e.preventDefault(); };" +
-          "    nodes.commentBtn.onmousedown = function(e) { e.preventDefault(); };" +
-          "    nodes.highlightBtn.onclick = function(e) { handleSelectionAction(false); };" +
-          "    nodes.commentBtn.onclick = function(e) { handleSelectionAction(true); };" +
+          "    nodes.highlightBtn.onclick = function() {" +
+          "      if (state.activeMode === 'highlight') { state.activeMode = null; } else { state.activeMode = 'highlight'; }" +
+          "      updateModeButtons();" +
+          "    };" +
+          "    nodes.commentBtn.onclick = function() {" +
+          "      if (state.activeMode === 'comment') { state.activeMode = null; } else { state.activeMode = 'comment'; }" +
+          "      updateModeButtons();" +
+          "    };" +
           "    nodes.panelBtn.onclick = function() { var open = nodes.panel.style.display !== 'flex'; nodes.panel.style.display = open ? 'flex' : 'none'; nodes.panelBtn.classList.toggle('active', open); if(open) renderList(); };" +
           "    nodes.panelClose.onclick = function() { nodes.panel.style.display = 'none'; nodes.panelBtn.classList.remove('active'); };" +
           "    nodes.filters.forEach(function(btn) { btn.onclick = function() { nodes.filters.forEach(function(b) { b.classList.remove('active'); }); btn.classList.add('active'); state.activeFilter = btn.getAttribute('data-filter'); renderList(); }; });" +
-          "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; };" +
+          "    nodes.popoverCancel.onclick = function() { nodes.popover.style.display = 'none'; state.activeMode = null; updateModeButtons(); };" +
           "    nodes.popoverSave.onclick = saveComment;" +
+          "    nodes.viewerArea.addEventListener('mouseup', handleSelectionEvent);" +
+          "    nodes.viewerArea.addEventListener('keyup', handleSelectionEvent);" +
           "  }" +
-          "  function handleSelectionAction(isComment) {" +
+          "  function updateModeButtons() {" +
+          "    nodes.highlightBtn.classList.toggle('active', state.activeMode === 'highlight');" +
+          "    nodes.commentBtn.classList.toggle('active', state.activeMode === 'comment');" +
+          "    if (state.activeMode === null) {" +
+          "      nodes.popover.style.display = 'none';" +
+          "    }" +
+          "  }" +
+          "  function handleSelectionEvent() {" +
+          "    if (!state.activeMode) return;" +
           "    var sel = window.getSelection();" +
-          "    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {" +
-          "      alert('Please select some text inside the document first.');" +
-          "      return;" +
-          "    }" +
-          "    var range = sel.getRangeAt(0);" +
-          "    var text = sel.toString().trim();" +
-          "    if (!text) {" +
-          "      alert('Please select some text inside the document first.');" +
-          "      return;" +
-          "    }" +
+          "    if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;" +
+          "    var range = sel.getRangeAt(0), text = sel.toString().trim();" +
+          "    if (!text) return;" +
           "    var el = range.commonAncestorContainer; if (el.nodeType === Node.TEXT_NODE) el = el.parentNode;" +
           "    var pageSlot = el.closest('.page-slot'), pageNum = pageSlot ? parseInt(pageSlot.dataset.page, 10) : null;" +
           "    if (!pageNum) {" +
           "      var currentInput = document.getElementById('pageInput');" +
           "      if (currentInput) pageNum = parseInt(currentInput.value, 10);" +
           "    }" +
-          "    state.currentSelection = { type: isComment ? 'comment' : 'highlight', text: text, page: pageNum || 1 };" +
-          "    if (isComment) {" +
+          "    state.currentSelection = { text: text, page: pageNum || 1 };" +
+          "    if (state.activeMode === 'highlight') {" +
+          "      saveHighlight();" +
+          "    } else if (state.activeMode === 'comment') {" +
           "      var rect = range.getBoundingClientRect();" +
           "      var viewerRect = nodes.viewerArea.getBoundingClientRect();" +
           "      nodes.popover.style.left = (rect.left - viewerRect.left + nodes.viewerArea.scrollLeft) + 'px';" +
           "      nodes.popover.style.top = (rect.bottom - viewerRect.top + nodes.viewerArea.scrollTop + 8) + 'px';" +
           "      nodes.popover.style.display = 'flex'; nodes.popoverText.value = ''; nodes.popoverText.focus();" +
-          "    } else {" +
-          "      saveHighlight();" +
           "    }" +
           "  }" +
           "  function saveHighlight() {" +
@@ -378,7 +385,7 @@
           "  function saveComment() {" +
           "    var val = nodes.popoverText.value.trim(); if(!val) return;" +
           "    state.annotations.push({ id: 'a_'+Date.now(), type: 'comment', text: state.currentSelection.text, comment: val, page: state.currentSelection.page, timestamp: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) });" +
-          "    nodes.popover.style.display = 'none'; window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
+          "    nodes.popover.style.display = 'none'; state.activeMode = null; updateModeButtons(); window.getSelection().removeAllRanges(); applyToDOM(); renderList();" +
           "  }" +
           "  function renderList() {" +
           "    nodes.panelList.innerHTML = '';" +
