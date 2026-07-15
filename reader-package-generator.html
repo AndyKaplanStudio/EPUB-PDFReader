@@ -58,7 +58,7 @@
 <div class="kap-topbar" aria-hidden="true"></div>
 <div class="wrap">
   <h1>Reader package generator</h1>
-  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader you can embed in your LMS via an iframe. The reader supports full-document search, zoom and page navigation.</p>
+  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader you can embed in your LMS via an iframe. The reader supports full-document search, zoom, annotations, and page navigation.</p>
 
   <div class="card">
     <div id="drop">
@@ -108,9 +108,9 @@
 </div>
 
 <!-- ==========================================================================
-     INLINE DEPLOYABLE READER TEMPLATE
+     INLINE DEPLOYABLE READER TEMPLATE (Dynamic compilation to index.html)
      ========================================================================== -->
-<template id="readerTemplate"><![CDATA[<!DOCTYPE html>
+<template id="readerTemplate"><!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -156,7 +156,8 @@
   #pageCount{color:var(--kap-muted)}
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
   #viewerArea{position:absolute;inset:0;overflow:auto}
-  /* PDF */
+  
+  /* PDF Annotations & TextLayer */
   #pdfViewer{padding:22px 0;display:flex;flex-direction:column;align-items:center;gap:18px}
   .page-slot{position:relative;flex:0 0 auto;background:#fff;box-shadow:0 1px 10px rgba(34,33,33,.10);border:1px solid var(--kap-line)}
   .page{position:absolute;inset:0}
@@ -167,21 +168,36 @@
   .textLayer span.search-hit{background:rgba(36,15,110,.16);border-radius:2px}
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
-  /* EPUB */
+
+  /* Annotation In-text Highlighting Styles */
+  .pdf-highlight {
+    background-color: rgba(254, 240, 138, 0.6) !important; /* Pastel yellow */
+    border-bottom: 2px dashed rgba(234, 179, 8, 0.6);
+    cursor: pointer;
+  }
+  .pdf-comment-highlight {
+    background-color: rgba(191, 219, 254, 0.6) !important; /* Pastel blue */
+    border-bottom: 2px dashed rgba(59, 130, 246, 0.6);
+    cursor: pointer;
+  }
+  
+  /* EPUB Layout */
   #epubViewer{position:absolute;inset:0}
   #epubArea{width:100%;height:100%}
-  /* status */
+  
+  /* Status overlay */
   #status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--kap-muted);
     flex-direction:column;gap:12px;text-align:center;padding:24px;background:var(--kap-col-bg);z-index:20}
   .spinner{width:32px;height:32px;border:3px solid rgba(36,15,110,.2);border-top-color:var(--kap-purple);
     border-radius:50%;animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .hidden{display:none!important}
-  /* search sidebar */
-  #searchResults{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
+  
+  /* Sliding Side Panel Framework (Shared) */
+  #searchResults, #annotationDrawer{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
     background:#fff;border-left:1px solid var(--kap-line);box-shadow:-2px 0 14px rgba(34,33,33,.10);
     z-index:15;display:none;flex-direction:column}
-  #searchResults.open{display:flex}
+  #searchResults.open, #annotationDrawer.open{display:flex}
   .sr-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--kap-line)}
   .sr-title{font-size:13px;font-weight:700;color:var(--kap-muted);letter-spacing:.1px}
   .sr-close{border:none;background:transparent;color:var(--kap-muted);font-size:18px;cursor:pointer;line-height:1;padding:4px 6px;border-radius:8px}
@@ -194,27 +210,13 @@
   .sr-item b{color:var(--kap-purple);background:rgba(36,15,110,.12);border-radius:3px;padding:0 2px}
   .sr-empty{padding:20px 14px;color:var(--kap-muted);font-size:13px;text-align:center}
 
-  /* Annotation drawer styling */
-  #annotationDrawer{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
-    background:#fff;border-left:1px solid var(--kap-line);box-shadow:-2px 0 14px rgba(34,33,33,.10);
-    z-index:15;display:none;flex-direction:column}
-  #annotationDrawer.open{display:flex}
+  /* Annotation drawer filters header */
   .anno-filters{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--kap-line);background:var(--kap-col-bg)}
   .filter-btn{flex:1;background:transparent;border:1px solid var(--kap-line);border-radius:6px;
     font-size:11px;font-weight:600;padding:5px;cursor:pointer;color:var(--kap-muted)}
   .filter-btn.active{background:var(--kap-purple);color:#fff;border-color:var(--kap-purple)}
 
-  /* Popover, Highlight colors */
-  .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.6) !important;
-    border-bottom: 2px dashed rgba(234, 179, 8, 0.5);
-    cursor: pointer;
-  }
-  .pdf-comment-highlight {
-    background-color: rgba(191, 219, 254, 0.6) !important;
-    border-bottom: 2px dashed rgba(59, 130, 246, 0.5);
-    cursor: pointer;
-  }
+  /* Popover commenting bubble */
   .anno-popover {
     position: absolute; background: #fff; border: 1px solid var(--kap-line);
     border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -250,14 +252,14 @@
       <span id="zoomLevel">100%</span>
       <button class="rbtn icon" id="zoomIn" title="Zoom in">&#43;</button>
     </div>
-    <div class="group">
+    <div class="group" id="searchGroup">
       <input id="search" placeholder="Search…" autocomplete="off">
       <button class="rbtn icon" id="searchPrev" title="Previous match">&#8593;</button>
       <button class="rbtn icon" id="searchNext" title="Next match">&#8595;</button>
       <button class="rbtn icon" id="searchList" title="Show results list">&#9776;</button>
       <span id="searchInfo"></span>
     </div>
-    <div style="border-right: 1px solid var(--kap-line); height: 24px; align-self: center;"></div>
+    <!-- Annotation Tool Suite -->
     <div class="group" id="annotationTools">
       <button class="rbtn icon" id="addHighlightBtn" title="Highlight Selection" disabled>🖊️</button>
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
@@ -270,6 +272,7 @@
       <div id="epubViewer" class="hidden"><div id="epubArea"></div></div>
       <div id="status"><div class="spinner"></div><div id="statusText">Loading…</div></div>
     </div>
+    <!-- Side Panels -->
     <div id="searchResults">
       <div class="sr-head">
         <span class="sr-title" id="srTitle">Results</span>
@@ -339,12 +342,11 @@ function startReader(){
     srList: document.getElementById('srList'), srClose: document.getElementById('srClose'),
     viewerArea: document.getElementById('viewerArea')
   };
-  function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); }
+  function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); AnnotationManager.toggleDrawer(false); }
   function closePanel(){ el.panel.classList.remove('open'); el.searchList.classList.remove('active'); }
   el.srClose.onclick = closePanel;
   el.searchList.onclick = function(){ el.panel.classList.contains('open') ? closePanel() : openPanel(); };
 
-  // Annotations Module State & Hoisting
   var pageData = [];
   var rawIdx = null;
   var rendition = null;
@@ -431,14 +433,11 @@ function startReader(){
             for(var k=0;k<items.length;k++){ var s=items[k].str||''; ranges.push({start:raw.length,end:raw.length+s.length,div:k}); raw+=s; }
             pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase()};
             
-            // Map index to dataset
             textDivs.forEach(function(div, idx) {
               if (div) div.dataset.idx = idx;
             });
 
             if(query) highlightPage(n);
-
-            // Re-render highlights and comments
             AnnotationManager.renderPageAnnotations(n);
           });
         });
@@ -768,7 +767,6 @@ function startReader(){
       document.addEventListener('mouseup', handleSelectionCheck);
       document.addEventListener('touchend', handleSelectionCheck);
       
-      // Setup click on PDF annotations
       document.getElementById('pdfViewer').onclick = function(e) {
         var mark = e.target.closest('.pdf-highlight, .pdf-comment-highlight');
         if (mark) {
@@ -781,7 +779,6 @@ function startReader(){
         }
       };
 
-      // EPUB selection listeners
       if (DOC.type === 'epub' && rendition) {
         rendition.themes.default({
           ".epub-highlight": { "background-color": "rgba(254, 240, 138, 0.6) !important", "border-bottom": "2px dashed rgba(234, 179, 8, 0.5)", "cursor": "pointer" },
@@ -1108,7 +1105,7 @@ function startReader(){
 }
 </script>
 </body>
-</html>]]></template>
+</html></template>
 
 <!-- JSZip for building the package -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1176,6 +1173,13 @@ function startReader(){
     return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status+' for '+url); return r.arrayBuffer(); });
   }
 
+  // Modern robust UTF-8 safe Base64 encoder helper
+  function utf8ToBase64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+      return String.fromCharCode(parseInt(p1, 16));
+    }));
+  }
+
   genBtn.addEventListener('click', function(){ generate().catch(function(e){ log('✖ '+e.message,'err'); genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)'; }); });
 
   function generate(){
@@ -1190,11 +1194,9 @@ function startReader(){
     var zip = new JSZip();
     var pkg = zip.folder(folder);
 
-    // Dynamic UTF-8 safe Base64 Encoder for index.html Template
+    // Retrieve and serialize template code dynamically
     var rawTemplate = document.getElementById('readerTemplate').innerHTML;
-    // Strip CDATA wrapper tags if present in some parsers
-    rawTemplate = rawTemplate.replace(/^\s*<!\[CDATA\[|\]\]>\s*$/g, '');
-    var READER_B64 = btoa(unescape(encodeURIComponent(rawTemplate)));
+    var READER_B64 = utf8ToBase64(rawTemplate);
 
     log('Reading '+picked.file.name+' ('+fmtSize(picked.file.size)+')…');
     return readAsBase64(picked.file).then(function(docB64){
