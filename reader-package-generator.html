@@ -138,6 +138,37 @@
   #toolbar .group:last-child{border-right:none}
   #docTitle{font-weight:600;font-size:14px;letter-spacing:.1px;max-width:240px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  
+  /* Outline Selector dropdown styles */
+  #tocSelect {
+    max-width: 180px;
+    border: 1px solid var(--kap-line);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-family: "Open Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--kap-purple);
+    background-color: #fff;
+    outline: none;
+    cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: border-color 0.15s;
+  }
+  #tocSelect:focus {
+    border-color: var(--kap-purple);
+  }
+  @media (max-width: 600px) {
+    #tocSelect {
+      max-width: 100px;
+    }
+    #docTitle {
+      max-width: 120px;
+    }
+  }
+
   .rbtn{border-radius:999px;background:#fff;box-shadow:0 0 0 1.5px var(--kap-purple) inset;
     color:var(--kap-purple);font-family:"Open Sans";font-size:14px;font-weight:600;line-height:1;letter-spacing:.1px;
     padding:8px 12px;border:none;cursor:pointer;transition:background .12s}
@@ -243,7 +274,13 @@
 <div id="app">
   <div class="kap-topbar" aria-hidden="true"></div>
   <div id="toolbar">
-    <div class="group"><span id="docTitle">Document</span></div>
+    <!-- Chapter Dropdown injected directly inside Title Group -->
+    <div class="group" id="titleGroup" style="display:flex; align-items:center; gap:8px;">
+      <span id="docTitle">Document</span>
+      <select id="tocSelect" style="display:none;" aria-label="Table of Contents">
+        <option value="">Chapters…</option>
+      </select>
+    </div>
     <div class="group" id="navGroup">
       <button class="rbtn icon" id="prevBtn" title="Previous">&#8249;</button>
       <span id="pageInfo"><input id="pageInput" value="1"> / <span id="pageCount">1</span></span>
@@ -348,7 +385,8 @@ function startReader(){
     searchInfo: document.getElementById('searchInfo'),
     panel: document.getElementById('searchResults'), srTitle: document.getElementById('srTitle'),
     srList: document.getElementById('srList'), srClose: document.getElementById('srClose'),
-    viewerArea: document.getElementById('viewerArea')
+    viewerArea: document.getElementById('viewerArea'),
+    tocSelect: document.getElementById('tocSelect')
   };
   function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); AnnotationManager.toggleDrawer(false); }
   function closePanel(){ el.panel.classList.remove('open'); el.searchList.classList.remove('active'); }
@@ -393,7 +431,74 @@ function startReader(){
       buildSlots(); hideStatus(); updateZoom(); setupObserver();
       render(1); render(2);
       AnnotationManager.init();
+      loadPDFBookmarks(); // Trigger bookmarks outline reader asynchronously on load
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
+
+    // Resolves outline destination page indices dynamically
+    var outlineRegistry = {};
+    function resolveDest(dest) {
+      if (typeof dest === 'string') {
+        return pdfDoc.getDestination(dest).then(function(resolvedDest) {
+          return resolveDestArray(resolvedDest);
+        });
+      } else if (Array.isArray(dest)) {
+        return resolveDestArray(dest);
+      }
+      return Promise.resolve(null);
+    }
+    function resolveDestArray(destArray) {
+      if (!destArray || destArray.length === 0) return Promise.resolve(null);
+      var pageRef = destArray[0];
+      if (typeof pageRef === 'object' && pageRef !== null) {
+        return pdfDoc.getPageIndex(pageRef).then(function(pageIndex) {
+          return pageIndex + 1;
+        }).catch(function() {
+          return null;
+        });
+      } else if (typeof pageRef === 'number') {
+        return Promise.resolve(pageRef + 1);
+      }
+      return Promise.resolve(null);
+    }
+
+    // Fetches PDF bookmarks tree mapping and parses outline selection nodes
+    /* STREAMING_CHUNK: Extracting PDF outlines bookmarks... */
+    function loadPDFBookmarks() {
+      pdfDoc.getOutline().then(function(outline) {
+        if (!outline || outline.length === 0) return;
+        el.tocSelect.style.display = 'inline-block';
+        
+        function processOutline(items, depth) {
+          items.forEach(function(item) {
+            var prefix = "— ".repeat(depth);
+            var opt = document.createElement('option');
+            opt.textContent = prefix + item.title;
+            
+            var destKey = "dest_" + Math.random().toString(36).substr(2, 9);
+            outlineRegistry[destKey] = item.dest;
+            opt.value = destKey;
+            el.tocSelect.appendChild(opt);
+            
+            if (item.items && item.items.length > 0) {
+              processOutline(item.items, depth + 1);
+            }
+          });
+        }
+        processOutline(outline, 0);
+      });
+
+      el.tocSelect.addEventListener('change', function() {
+        var destKey = el.tocSelect.value;
+        if (!destKey) return;
+        var dest = outlineRegistry[destKey];
+        if (!dest) return;
+        resolveDest(dest).then(function(pageNum) {
+          if (pageNum) {
+            goToPage(pageNum);
+          }
+        });
+      });
+    }
 
     function buildSlots(){
       viewer.innerHTML='';
@@ -440,7 +545,7 @@ function startReader(){
             var items=tc.items, raw='', ranges=[];
             for(var k=0;k<items.length;k++){ var s=items[k].str||''; ranges.push({start:raw.length,end:raw.length+s.length,div:k}); raw+=s; }
             
-            // FIXED: Store the raw textual page payload dynamically in pageData
+            // Store the raw textual page payload dynamically in pageData
             pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase(), rawText:raw};
             
             textDivs.forEach(function(div, idx) {
@@ -485,7 +590,7 @@ function startReader(){
       updateZoom();
       if(slots[anchor]) el.viewerArea.scrollTop = slots[anchor].offsetTop - NAV_OFFSET;
       el.pageInput.value = anchor;
-      for(var d=-1;d<=2;d++) render(anchor+d);
+      for(var d=-1; d<=2; d++) render(anchor+d);
     }
     el.zoomIn.onclick=function(){ setScale(scale*1.2); };
     el.zoomOut.onclick=function(){ setScale(scale/1.2); };
@@ -598,7 +703,39 @@ function startReader(){
       hideStatus();
       book.locations.generate(1000).then(function(){ locReady=true; el.pageCount.textContent=book.locations.length(); updateLoc(); });
       AnnotationManager.init();
+      loadEpubTOC(); // Trigger EPUB outline reader asynchronously on load
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
+
+    // Parses table of contents navigation files dynamically
+    /* STREAMING_CHUNK: Extracting EPUB outlines bookmark navigation... */
+    function loadEpubTOC() {
+      book.loaded.navigation.then(function(nav) {
+        if (!nav || !nav.toc || nav.toc.length === 0) return;
+        el.tocSelect.style.display = 'inline-block';
+        
+        function processEpubToc(items, depth) {
+          items.forEach(function(item) {
+            var prefix = "— ".repeat(depth);
+            var opt = document.createElement('option');
+            opt.textContent = prefix + (item.label || '').trim();
+            opt.value = item.href;
+            el.tocSelect.appendChild(opt);
+            
+            if (item.subitems && item.subitems.length > 0) {
+              processEpubToc(item.subitems, depth + 1);
+            }
+          });
+        }
+        processEpubToc(nav.toc, 0);
+      });
+
+      el.tocSelect.addEventListener('change', function() {
+        var href = el.tocSelect.value;
+        if (href) {
+          rendition.display(href);
+        }
+      });
+    }
 
     rendition.themes.default({ '::selection': { 'background':'rgba(36,15,110,.22)' } });
 
@@ -1227,7 +1364,7 @@ function startReader(){
         var div = pd.textDivs[it.div];
         if (div) {
           var txt = '';
-          // FIXED: Pull directly from pageData text array instead of nullable global rawIdx search tracker
+          // Pull directly from pageData text array instead of nullable global rawIdx search tracker
           var fullRaw = pd.rawText;
           if (fullRaw) txt = fullRaw.slice(it.start, it.end);
           else txt = div.textContent;
@@ -1499,6 +1636,7 @@ function startReader(){
       '  - Search across the whole document with a results list',
       '  - Zoom in / out',
       '  - Page / position navigation',
+      '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
       ''
     ].join('\n');
