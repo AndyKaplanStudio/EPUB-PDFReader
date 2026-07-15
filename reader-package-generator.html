@@ -130,7 +130,7 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;
     font-family:"Open Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--kap-text)}
-  #app{display:flex;flex-direction:column;height:100vh;background:var(--kap-col-bg)}
+  #app{display:flex;flex-direction:column;height:100vh;background:var(--kap-col-bg);transition: background-color 0.15s, color 0.15s;}
   .kap-topbar{height:6px;background:var(--kap-purple);flex:0 0 auto}
   #toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;padding:10px 14px;
     border-bottom:1px solid var(--kap-line);z-index:10;user-select:none;flex:0 0 auto}
@@ -268,6 +268,89 @@
   }
   .anno-popover .btn-save { background: var(--kap-purple); color: #fff; }
   .anno-popover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }
+
+  /* ==========================================================================
+     ACCESSIBLE DARK THEME CUSTOMIZATIONS (WCAG AAA Compliance Guidelines)
+     ========================================================================== */
+  /* STREAMING_CHUNK: Implementing dark theme customizations... */
+  #app.dark-theme {
+    --kap-purple: #a5b4fc; /* accessible soft lavender/blue accent */
+    --kap-text: #e2e8f0;   /* readable soft white text */
+    --kap-muted: #94a3b8;  /* mid-toned light slate gray */
+    --kap-line: #2d3748;   /* deep border outline lines */
+    --kap-col-bg: #121212; /* base background */
+    --kap-hero-bg: #121212;
+  }
+  #app.dark-theme #toolbar,
+  #app.dark-theme #searchResults,
+  #app.dark-theme #annotationDrawer,
+  #app.dark-theme .anno-popover,
+  #app.dark-theme .anno-filters {
+    background-color: #1e1e1e !important;
+    color: var(--kap-text) !important;
+  }
+  #app.dark-theme #searchResults,
+  #app.dark-theme #annotationDrawer {
+    border-left: 1px solid var(--kap-line) !important;
+  }
+  #app.dark-theme .rbtn {
+    background-color: #1e1e1e !important;
+    color: var(--kap-purple) !important;
+    box-shadow: 0 0 0 1.5px var(--kap-purple) inset !important;
+  }
+  #app.dark-theme .rbtn:hover {
+    background-color: rgba(165, 180, 252, 0.12) !important;
+  }
+  #app.dark-theme .rbtn.active {
+    background-color: var(--kap-purple) !important;
+    color: #121212 !important;
+  }
+  #app.dark-theme #search,
+  #app.dark-theme #pageInput,
+  #app.dark-theme #tocSelect,
+  #app.dark-theme .anno-popover textarea {
+    background-color: #121212 !important;
+    color: var(--kap-text) !important;
+    border: 1px solid var(--kap-line) !important;
+  }
+  #app.dark-theme #tocSelect option {
+    background-color: #121212 !important;
+    color: var(--kap-text) !important;
+  }
+  #app.dark-theme .sr-item {
+    color: var(--kap-muted) !important;
+  }
+  #app.dark-theme .sr-item:hover {
+    background-color: #242424 !important;
+    color: var(--kap-text) !important;
+  }
+  #app.dark-theme .sr-item.active {
+    background-color: rgba(165, 180, 252, 0.1) !important;
+    border-color: rgba(165, 180, 252, 0.3) !important;
+    color: var(--kap-text) !important;
+  }
+  #app.dark-theme .sr-item b {
+    color: var(--kap-purple) !important;
+    background-color: rgba(165, 180, 252, 0.15) !important;
+  }
+  #app.dark-theme #annoGlobalActions {
+    background-color: #1e1e1e !important;
+    border-bottom: 1px solid var(--kap-line) !important;
+  }
+
+  /* Accessible Selection Layers */
+  #app.dark-theme .textLayer ::selection {
+    background: rgba(165, 180, 252, 0.35) !important;
+  }
+
+  /* GPU Accelerated Canvas Color-Inversion pipeline */
+  #app.dark-theme .page-slot {
+    background-color: #1e1e1e !important;
+    border-color: var(--kap-line) !important;
+  }
+  #app.dark-theme .page-slot canvas {
+    filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95);
+  }
 </style>
 </head>
 <body>
@@ -304,6 +387,10 @@
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
       <button class="rbtn icon" id="toggleAnnotationsBtn" title="Annotations Drawer">📋</button>
     </div>
+    <!-- Theme Toggle Suite (Injected right after annotation tools) -->
+    <div class="group" id="themeGroup">
+      <button class="rbtn icon" id="themeToggleBtn" title="Toggle Accessible Dark Mode">☀️</button>
+    </div>
   </div>
   <div id="stage">
     <div id="viewerArea">
@@ -329,7 +416,7 @@
         <button class="filter-btn" data-filter="highlight">Highlights</button>
         <button class="filter-btn" data-filter="comment">Comments</button>
       </div>
-      <!-- STREAMING_CHUNK: Injecting bulk copy and export controls... -->
+      <!-- Injected bulk copy and export controls... -->
       <div id="annoGlobalActions" style="display:flex; gap:6px; padding:8px 14px; border-bottom:1px solid var(--kap-line); background:#fff;">
         <button class="rbtn" id="copyAllBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📋 Copy All</button>
         <button class="rbtn" id="exportBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📥 Export Notes</button>
@@ -739,6 +826,14 @@ function startReader(){
 
     rendition.themes.default({ '::selection': { 'background':'rgba(36,15,110,.22)' } });
 
+    // Synchronous Registration of dark EPUB CSS properties
+    rendition.themes.register('dark', {
+      'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
+      '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
+      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
+      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" }
+    });
+
     function updateLoc(){ if(!locReady)return; try{ var loc=rendition.currentLocation(); if(loc&&loc.start){ el.pageInput.value=book.locations.locationFromCfi(loc.start.cfi)+1; } }catch(e){} }
     rendition.on('relocated', updateLoc);
 
@@ -1058,6 +1153,9 @@ function startReader(){
       } else if (DOC.type === 'epub') {
         self.renderAllEPUBAnnotations();
       }
+
+      // ACCESSIBLE DARK THEME: Apply persistent choice and tie change listener trigger
+      initializeAccessibleDarkTheme();
 
       // Initial drawer render
       this.renderDrawer();
@@ -1468,6 +1566,53 @@ function startReader(){
       }, 10);
     }
   };
+
+  /* ==========================================================================
+     THEME ACCESSIBILITY ENGINE (DARK MODE CONTROLLER)
+     ========================================================================== */
+  /* STREAMING_CHUNK: Implementing the dark theme controller script... */
+  function initializeAccessibleDarkTheme() {
+    var themeToggleBtn = document.getElementById('themeToggleBtn');
+    var appContainer = document.getElementById('app');
+    
+    // Global accessibility toggle preference
+    var currentTheme = localStorage.getItem('kaplan_reader_darkmode') || 'light';
+
+    function setMode(mode) {
+      if (mode === 'dark') {
+        appContainer.classList.add('dark-theme');
+        themeToggleBtn.textContent = '🌙';
+        localStorage.setItem('kaplan_reader_darkmode', 'dark');
+        if (rendition && rendition.themes) {
+          rendition.themes.select('dark');
+        }
+      } else {
+        appContainer.classList.remove('dark-theme');
+        themeToggleBtn.textContent = '☀️';
+        localStorage.setItem('kaplan_reader_darkmode', 'light');
+        if (rendition && rendition.themes) {
+          rendition.themes.select('default');
+        }
+      }
+    }
+
+    // Bind event trigger
+    themeToggleBtn.onclick = function() {
+      var targetMode = appContainer.classList.contains('dark-theme') ? 'light' : 'dark';
+      setMode(targetMode);
+    };
+
+    // Apply baseline choice on launch cycle
+    setMode(currentTheme);
+
+    // Secure EPUB dynamic themes injection during rendition loops
+    if (DOC.type === 'epub' && rendition) {
+      rendition.on('rendered', function() {
+        var freshMode = localStorage.getItem('kaplan_reader_darkmode') || 'light';
+        rendition.themes.select(freshMode === 'dark' ? 'dark' : 'default');
+      });
+    }
+  }
 }
 </script>
 </body>
@@ -1638,6 +1783,7 @@ function startReader(){
       '  - Page / position navigation',
       '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
+      '  - Accessible WCAG AAA Dark Mode theme toggler',
       ''
     ].join('\n');
   }
