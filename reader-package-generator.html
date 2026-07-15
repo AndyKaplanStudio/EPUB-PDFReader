@@ -180,7 +180,7 @@
   .rbtn.active{background:var(--kap-purple);color:#fff}
   #search{border:1px solid var(--kap-line);border-radius:12px;background:#fff;color:var(--kap-text);
     padding:9px 12px;font-family:"Open Sans";font-size:14px;line-height:20px;width:180px;outline:none}
-  #search:focus-visible{outline:2px solid var(--kap-focus);outline-offset:1px;border-color:var(--kap-purple)}
+  #search:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--kap-purple)}
   #searchInfo{color:var(--kap-muted);font-size:13px;min-width:58px;text-align:center}
   #zoomLevel,#pageInfo{color:var(--kap-text);font-size:13px;min-width:44px;text-align:center}
   #pageInput{width:52px;text-align:center;border:1px solid var(--kap-line);color:var(--kap-text);
@@ -272,7 +272,6 @@
   /* ==========================================================================
      ACCESSIBLE DARK THEME CUSTOMIZATIONS (WCAG AAA Compliance Guidelines)
      ========================================================================== */
-  /* STREAMING_CHUNK: Implementing dark theme customizations... */
   #app.dark-theme {
     --kap-purple: #a5b4fc; /* accessible soft lavender/blue accent */
     --kap-text: #e2e8f0;   /* readable soft white text */
@@ -1199,7 +1198,7 @@ function startReader(){
             text: activePDFSelection.text, comment: text, created: new Date().toISOString()
           });
           self.saveAnnotations();
-          self.renderPageAnnotations(activePDFSelection.page);
+          self.renderPageAnnotations(self.annotations[self.annotations.length - 1].page);
           self.renderDrawer();
           self.clearSelection();
         });
@@ -1511,6 +1510,12 @@ function startReader(){
       if (anno.docType !== 'epub') return;
       var kind = anno.type === 'highlight' ? 'highlight' : 'underline';
       var cssClass = anno.type === 'highlight' ? 'epub-highlight' : 'epub-comment';
+      
+      // FIXED: Clear out the existing highlight range from DOM before re-rendering to prevent cumulative darkening
+      try {
+        rendition.annotations.remove(anno.cfiRange, kind);
+      } catch(e) {}
+      
       rendition.annotations.add(kind, anno.cfiRange, {}, null, cssClass);
     },
     
@@ -1570,7 +1575,6 @@ function startReader(){
   /* ==========================================================================
      THEME ACCESSIBILITY ENGINE (DARK MODE CONTROLLER)
      ========================================================================== */
-  /* STREAMING_CHUNK: Implementing the dark theme controller script... */
   function initializeAccessibleDarkTheme() {
     var themeToggleBtn = document.getElementById('themeToggleBtn');
     var appContainer = document.getElementById('app');
