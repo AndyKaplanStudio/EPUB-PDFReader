@@ -1,3 +1,4 @@
+<!-- STREAMING_CHUNK: Setting up the layout structure... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,6 +111,7 @@
 <!-- ==========================================================================
      INLINE DEPLOYABLE READER TEMPLATE (Dynamic compilation to index.html)
      ========================================================================== -->
+<!-- STREAMING_CHUNK: Embedding reader template... -->
 <template id="readerTemplate"><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -169,15 +171,15 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation In-text Highlighting Styles */
+  /* Annotation In-text Highlighting Styles (High Legibility Soft Palette) */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.6) !important; /* Pastel yellow */
-    border-bottom: 2px dashed rgba(234, 179, 8, 0.6);
+    background-color: rgba(254, 240, 138, 0.35) !important; /* Elegant Pastel yellow */
+    border-bottom: 1.5px solid rgba(234, 179, 8, 0.3);
     cursor: pointer;
   }
   .pdf-comment-highlight {
-    background-color: rgba(191, 219, 254, 0.6) !important; /* Pastel blue */
-    border-bottom: 2px dashed rgba(59, 130, 246, 0.6);
+    background-color: rgba(186, 230, 253, 0.35) !important; /* Elegant Pastel blue */
+    border-bottom: 1.5px solid rgba(56, 189, 248, 0.3);
     cursor: pointer;
   }
   
@@ -296,6 +298,7 @@
 </div>
 
 <script src="assets/document-data.js"></script>
+<!-- STREAMING_CHUNK: Initializing core script handlers... -->
 <script>
 (function(){
   var cfg = window.__DOC__ || {};
@@ -431,7 +434,9 @@ function startReader(){
           return Promise.resolve(pr).then(function(){
             var items=tc.items, raw='', ranges=[];
             for(var k=0;k<items.length;k++){ var s=items[k].str||''; ranges.push({start:raw.length,end:raw.length+s.length,div:k}); raw+=s; }
-            pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase()};
+            
+            // FIXED: Store the raw textual page payload dynamically in pageData
+            pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase(), rawText:raw};
             
             textDivs.forEach(function(div, idx) {
               if (div) div.dataset.idx = idx;
@@ -639,8 +644,9 @@ function startReader(){
   }
 
   /* ==========================================================================
-     HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER)
+     HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
      ========================================================================== */
+  /* STREAMING_CHUNK: Instantiating the Annotation Manager module... */
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -728,12 +734,34 @@ function startReader(){
     }, 10);
   }
 
+  // Unique key to prevent collision between multiple book packages in Brightspace LMS
+  var storageKey = 'kaplan_reader_annos_' + (DOC.name || 'default').replace(/[^a-zA-Z0-9]/g, '_');
+
   var AnnotationManager = {
     annotations: [],
     currentFilter: 'all',
     
+    // Load existing highlights/comments from browser localStorage
+    loadAnnotations: function() {
+      try {
+        var stored = localStorage.getItem(storageKey);
+        this.annotations = stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        this.annotations = [];
+      }
+    },
+
+    // Save highlights/comments state directly to browser localStorage
+    saveAnnotations: function() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(this.annotations));
+      } catch (e) {}
+    },
+
     init: function() {
       var self = this;
+      self.loadAnnotations(); // Synchronously load persistence stack prior to drawing
+
       document.getElementById('addHighlightBtn').onclick = function() { self.addHighlight(); };
       document.getElementById('addCommentBtn').onclick = function() { self.addComment(); };
       document.getElementById('toggleAnnotationsBtn').onclick = function() { self.toggleDrawer(); };
@@ -780,9 +808,10 @@ function startReader(){
       };
 
       if (DOC.type === 'epub' && rendition) {
+        // High-legibility custom style style rules applied inside the book iframe context
         rendition.themes.default({
-          ".epub-highlight": { "background-color": "rgba(254, 240, 138, 0.6) !important", "border-bottom": "2px dashed rgba(234, 179, 8, 0.5)", "cursor": "pointer" },
-          ".epub-comment": { "background-color": "rgba(191, 219, 254, 0.6) !important", "border-bottom": "2px dashed rgba(59, 130, 246, 0.5)", "cursor": "pointer" }
+          ".epub-highlight": { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
+          ".epub-comment": { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" }
         });
         
         rendition.on('selected', function(cfiRange, contents) {
@@ -821,6 +850,20 @@ function startReader(){
           }
         });
       }
+
+      // REDRAW TRIGGER: Force an immediate draw cycle on pre-rendered pages now that storage is parsed
+      if (DOC.type === 'pdf') {
+        Object.keys(rendered).forEach(function(pageNum) {
+          if (rendered[pageNum]) {
+            self.renderPageAnnotations(parseInt(pageNum, 10));
+          }
+        });
+      } else if (DOC.type === 'epub') {
+        self.renderAllEPUBAnnotations();
+      }
+
+      // Initial drawer render
+      this.renderDrawer();
     },
     
     addHighlight: function() {
@@ -831,6 +874,7 @@ function startReader(){
           page: activePDFSelection.page, startOffset: activePDFSelection.startOffset, endOffset: activePDFSelection.endOffset,
           text: activePDFSelection.text, comment: '', created: new Date().toISOString()
         });
+        this.saveAnnotations();
         this.renderPageAnnotations(activePDFSelection.page);
         this.renderDrawer();
         this.clearSelection();
@@ -840,6 +884,7 @@ function startReader(){
           id: id, type: 'highlight', docType: 'epub',
           cfiRange: activeEPUBSelection.cfiRange, text: activeEPUBSelection.text, comment: '', created: new Date().toISOString()
         });
+        this.saveAnnotations();
         this.renderEPUBAnnotation(this.annotations[this.annotations.length - 1]);
         this.renderDrawer();
         this.clearSelection();
@@ -858,6 +903,7 @@ function startReader(){
             page: activePDFSelection.page, startOffset: activePDFSelection.startOffset, endOffset: activePDFSelection.endOffset,
             text: activePDFSelection.text, comment: text, created: new Date().toISOString()
           });
+          self.saveAnnotations();
           self.renderPageAnnotations(activePDFSelection.page);
           self.renderDrawer();
           self.clearSelection();
@@ -880,6 +926,7 @@ function startReader(){
             id: id, type: 'comment', docType: 'epub',
             cfiRange: activeEPUBSelection.cfiRange, text: activeEPUBSelection.text, comment: text, created: new Date().toISOString()
           });
+          self.saveAnnotations();
           self.renderEPUBAnnotation(self.annotations[self.annotations.length - 1]);
           self.renderDrawer();
           self.clearSelection();
@@ -912,6 +959,7 @@ function startReader(){
       }
     },
     
+    /* STREAMING_CHUNK: Formatting side panel annotation list cards... */
     renderDrawer: function() {
       var self = this;
       var list = document.getElementById('annoList');
@@ -931,11 +979,12 @@ function startReader(){
         var commentHtml = a.comment ? '<div style="background:var(--kap-col-bg); padding:6px 8px; border-radius:6px; margin-top:6px; font-style:italic; border-left:3px solid var(--kap-purple); color:var(--kap-text)">'+esc(a.comment)+'</div>' : '';
         var location = a.docType === 'pdf' ? 'Page '+a.page : 'EPUB Location';
         
-        return '<div class="sr-item" data-id="'+a.id+'" style="position:relative; margin-bottom:8px;">' +
-                 '<span class="sr-close delete-anno-btn" data-id="'+a.id+'" style="position:absolute; right:8px; top:8px; font-size:14px; cursor:pointer;" title="Delete">&times;</span>' +
+        // Premium high-contrast red pill button for 100% reliable click targeting
+        return '<div class="sr-item" data-id="'+a.id+'" style="position:relative; margin-bottom:8px; padding-right:74px; min-height:64px;">' +
+                 '<button class="delete-anno-btn" data-id="'+a.id+'" style="position:absolute; right:10px; top:10px; background:#fee2e2; border:none; cursor:pointer; font-size:10px; font-weight:700; color:#dc2626; padding:4px 8px; border-radius:6px; display:block; transition:background 0.1s;" title="Delete Annotation">Delete</button>' +
                  '<div class="loc" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">' +
                    '<span>'+location+'</span>' +
-                   '<span style="font-size:10px; color:var(--kap-muted);">'+dateStr+'</span>' +
+                   '<span style="font-size:10px; color:var(--kap-muted); margin-right:12px;">'+dateStr+'</span>' +
                  '</div>' +
                  '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#1d4ed8')+'">'+indicator+'</div>' +
                  '<div style="color:var(--kap-text); font-size:12.5px; line-height:1.4;">"'+esc(a.text)+'"</div>' +
@@ -945,9 +994,10 @@ function startReader(){
       
       Array.prototype.forEach.call(list.querySelectorAll('.sr-item'), function(item) {
         item.onclick = function(e) {
-          if (e.target.classList.contains('delete-anno-btn')) {
+          var deleteBtn = e.target.closest('.delete-anno-btn');
+          if (deleteBtn) {
             e.stopPropagation();
-            self.deleteAnnotation(e.target.dataset.id);
+            self.deleteAnnotation(deleteBtn.dataset.id);
             return;
           }
           self.navigateTo(item.dataset.id);
@@ -956,10 +1006,19 @@ function startReader(){
     },
     
     deleteAnnotation: function(id) {
-      var idx = this.annotations.findIndex(function(a) { return a.id == id; });
+      // Robust ES5 matching loop
+      var idx = -1;
+      for (var i = 0; i < this.annotations.length; i++) {
+        if (this.annotations[i].id == id) {
+          idx = i;
+          break;
+        }
+      }
+
       if (idx !== -1) {
         var anno = this.annotations[idx];
         this.annotations.splice(idx, 1);
+        this.saveAnnotations(); // Persist changes immediately to local storage
         
         if (anno.docType === 'pdf') {
           this.renderPageAnnotations(anno.page);
@@ -999,7 +1058,8 @@ function startReader(){
         var div = pd.textDivs[it.div];
         if (div) {
           var txt = '';
-          var fullRaw = rawIdx[pageNum];
+          // FIXED: Pull directly from pageData text array instead of nullable global rawIdx search tracker
+          var fullRaw = pd.rawText;
           if (fullRaw) txt = fullRaw.slice(it.start, it.end);
           else txt = div.textContent;
           div.innerHTML = esc(txt);
@@ -1109,6 +1169,7 @@ function startReader(){
 
 <!-- JSZip for building the package -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- STREAMING_CHUNK: Implementing the compilation engine... -->
 <script>
 (function(){
   "use strict";
@@ -1175,6 +1236,7 @@ function startReader(){
 
   genBtn.addEventListener('click', function(){ generate().catch(function(e){ log('✖ '+e.message,'err'); genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)'; }); });
 
+  /* STREAMING_CHUNK: Compiling package assets and bundling... */
   function generate(){
     if(!picked) return Promise.resolve();
     if(typeof JSZip==='undefined'){ alert('JSZip failed to load. Please connect to the internet and reload this page.'); return Promise.resolve(); }
@@ -1187,7 +1249,7 @@ function startReader(){
     var zip = new JSZip();
     var pkg = zip.folder(folder);
 
-    // Dynamic clean text extraction of HTML template
+    // Dynamic extraction of HTML template directly from DOM element - bypasses base64 emoji translation failures!
     var rawTemplate = document.getElementById('readerTemplate').innerHTML;
     if (!rawTemplate.trim().startsWith('<!DOCTYPE')) {
       rawTemplate = '<!DOCTYPE html>\n' + rawTemplate;
