@@ -857,13 +857,14 @@ function startReader(){
     });
 
     // Synchronous Registration of dark EPUB CSS properties
-    // Targets h1-h6 headers, spans within headers, specific structural classes, and hardcoded dark/blue colors verbatim in "image_a2cf82.png" and "image_a2e5ca.png"
+    // Targets h1-h6 headers, spans within headers, specific structural classes, and hardcoded dark/blue colors verbatim in "image_a2cf82.png", "image_a2e5ca.png", and "image_a3b082.png"
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
-      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"]': { 'color': '#ffffff !important' },
-      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *': { 'color': '#ffffff !important' },
+      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"]': { 'color': '#ffffff !important' },
+      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *': { 'color': '#ffffff !important' },
       'a, a *, [class*="link"], [class*="link"] *': { 'color': '#a5b4fc !important' },
-      '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"]': { 'color': '#ffffff !important' },
+      '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"]': { 'color': '#ffffff !important' },
+      '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] *': { 'color': '#ffffff !important' },
       '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"]': { 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
@@ -1632,37 +1633,39 @@ function startReader(){
     var themeToggleBtn = document.getElementById('themeToggleBtn');
     var appContainer = document.getElementById('app');
     
-    var currentTheme = localStorage.getItem('kaplan_reader_darkmode') || 'light';
+    // Force normal (light) mode to be the launch style on load
+    var currentTheme = 'light';
 
     function setMode(mode) {
       if (mode === 'dark') {
         appContainer.classList.add('dark-theme');
         themeToggleBtn.textContent = '🌙';
-        localStorage.setItem('kaplan_reader_darkmode', 'dark');
         if (rendition && rendition.themes) {
           rendition.themes.select('dark');
         }
       } else {
         appContainer.classList.remove('dark-theme');
         themeToggleBtn.textContent = '☀️';
-        localStorage.setItem('kaplan_reader_darkmode', 'light');
         if (rendition && rendition.themes) {
           rendition.themes.select('default');
         }
       }
     }
 
+    // Bind event trigger
     themeToggleBtn.onclick = function() {
       var targetMode = appContainer.classList.contains('dark-theme') ? 'light' : 'dark';
       setMode(targetMode);
     };
 
+    // Apply baseline choice on launch cycle
     setMode(currentTheme);
 
+    // Secure EPUB dynamic themes injection during rendition loops
     if (DOC.type === 'epub' && rendition) {
       rendition.on('rendered', function() {
-        var freshMode = localStorage.getItem('kaplan_reader_darkmode') || 'light';
-        rendition.themes.select(freshMode === 'dark' ? 'dark' : 'default');
+        var freshMode = appContainer.classList.contains('dark-theme') ? 'dark' : 'default';
+        rendition.themes.select(freshMode);
       });
     }
   }
