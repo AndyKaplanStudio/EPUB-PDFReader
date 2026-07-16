@@ -857,8 +857,12 @@ function startReader(){
     });
 
     // Synchronous Registration of dark EPUB CSS properties
+    // Targets h1-h6 headers, spans within headers, and classes matching heading/title definitions to override unreadable blue colors verbatim in "image_a2cf82.png".
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
+      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"]': { 'color': '#ffffff !important' },
+      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *': { 'color': '#ffffff !important' },
+      'a, a *': { 'color': '#a5b4fc !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
       '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" },
