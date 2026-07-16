@@ -1,3 +1,4 @@
+<!-- STREAMING_CHUNK: Setting up the generator document layout... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,6 +108,10 @@
   </div>
 </div>
 
+<!-- ==========================================================================
+     INLINE DEPLOYABLE READER TEMPLATE (Dynamic compilation to index.html)
+     ========================================================================== -->
+<!-- STREAMING_CHUNK: Embedding reader template... -->
 <template id="readerTemplate"><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,6 +139,7 @@
   #docTitle{font-weight:600;font-size:14px;letter-spacing:.1px;max-width:240px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   
+  /* Outline Selector dropdown styles */
   #tocSelect {
     max-width: 180px;
     border: 1px solid var(--kap-line);
@@ -184,6 +190,7 @@
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
   #viewerArea{position:absolute;inset:0;overflow:auto}
   
+  /* PDF Annotations & TextLayer */
   #pdfViewer{padding:22px 0;display:flex;flex-direction:column;align-items:center;gap:18px}
   .page-slot{position:relative;flex:0 0 auto;background:#fff;box-shadow:0 1px 10px rgba(34,33,33,.10);border:1px solid var(--kap-line)}
   .page{position:absolute;inset:0}
@@ -195,20 +202,23 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
+  /* Annotation In-text Highlighting Styles (High Legibility Soft Palette) */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.35) !important;
+    background-color: rgba(254, 240, 138, 0.35) !important; /* Elegant Pastel yellow */
     border-bottom: 1.5px solid rgba(234, 179, 8, 0.3);
     cursor: pointer;
   }
   .pdf-comment-highlight {
-    background-color: rgba(186, 230, 253, 0.35) !important;
+    background-color: rgba(186, 230, 253, 0.35) !important; /* Elegant Pastel blue */
     border-bottom: 1.5px solid rgba(56, 189, 248, 0.3);
     cursor: pointer;
   }
   
+  /* EPUB Layout */
   #epubViewer{position:absolute;inset:0}
   #epubArea{width:100%;height:100%}
   
+  /* Status overlay */
   #status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--kap-muted);
     flex-direction:column;gap:12px;text-align:center;padding:24px;background:var(--kap-col-bg);z-index:20}
   .spinner{width:32px;height:32px;border:3px solid rgba(36,15,110,.2);border-top-color:var(--kap-purple);
@@ -216,6 +226,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .hidden{display:none!important}
   
+  /* Sliding Side Panel Framework (Shared) */
   #searchResults, #annotationDrawer{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
     background:#fff;border-left:1px solid var(--kap-line);box-shadow:-2px 0 14px rgba(34,33,33,.10);
     z-index:15;display:none;flex-direction:column}
@@ -232,11 +243,13 @@
   .sr-item b{color:var(--kap-purple);background:rgba(36,15,110,.12);border-radius:3px;padding:0 2px}
   .sr-empty{padding:20px 14px;color:var(--kap-muted);font-size:13px;text-align:center}
 
+  /* Annotation drawer filters header */
   .anno-filters{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--kap-line);background:var(--kap-col-bg)}
   .filter-btn{flex:1;background:transparent;border:1px solid var(--kap-line);border-radius:6px;
     font-size:11px;font-weight:600;padding:5px;cursor:pointer;color:var(--kap-muted)}
   .filter-btn.active{background:var(--kap-purple);color:#fff;border-color:var(--kap-purple)}
 
+  /* Popover commenting bubble */
   .anno-popover {
     position: absolute; background: #fff; border: 1px solid var(--kap-line);
     border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -260,11 +273,11 @@
      ACCESSIBLE DARK THEME CUSTOMIZATIONS (WCAG AAA Compliance Guidelines)
      ========================================================================== */
   #app.dark-theme {
-    --kap-purple: #a5b4fc;
-    --kap-text: #e2e8f0;
-    --kap-muted: #94a3b8;
-    --kap-line: #2d3748;
-    --kap-col-bg: #121212;
+    --kap-purple: #a5b4fc; /* accessible soft lavender/blue accent */
+    --kap-text: #e2e8f0;   /* readable soft white text */
+    --kap-muted: #94a3b8;  /* mid-toned light slate gray */
+    --kap-line: #2d3748;   /* deep border outline lines */
+    --kap-col-bg: #121212; /* base background */
     --kap-hero-bg: #121212;
   }
   #app.dark-theme #toolbar,
@@ -324,18 +337,18 @@
     border-bottom: 1px solid var(--kap-line) !important;
   }
 
+  /* Accessible Selection Layers */
   #app.dark-theme .textLayer ::selection {
     background: rgba(165, 180, 252, 0.35) !important;
   }
 
+  /* GPU Accelerated Canvas Color-Inversion pipeline */
   #app.dark-theme .page-slot {
     background-color: #1e1e1e !important;
     border-color: var(--kap-line) !important;
   }
-  
-  /* BUG-007: Boost brightness and contrast for inverted blue text contrast */
   #app.dark-theme .page-slot canvas {
-    filter: invert(0.9) hue-rotate(180deg) contrast(1.3) brightness(1.35);
+    filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95);
   }
 </style>
 </head>
@@ -343,6 +356,7 @@
 <div id="app">
   <div class="kap-topbar" aria-hidden="true"></div>
   <div id="toolbar">
+    <!-- Chapter Dropdown injected directly inside Title Group -->
     <div class="group" id="titleGroup" style="display:flex; align-items:center; gap:8px;">
       <span id="docTitle">Document</span>
       <select id="tocSelect" style="display:none;" aria-label="Table of Contents">
@@ -366,11 +380,13 @@
       <button class="rbtn icon" id="searchList" title="Show results list">&#9776;</button>
       <span id="searchInfo"></span>
     </div>
+    <!-- Annotation Tool Suite -->
     <div class="group" id="annotationTools">
       <button class="rbtn icon" id="addHighlightBtn" title="Highlight Selection" disabled>🖊️</button>
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
       <button class="rbtn icon" id="toggleAnnotationsBtn" title="Annotations Drawer">📋</button>
     </div>
+    <!-- Theme Toggle Suite (Injected right after annotation tools) -->
     <div class="group" id="themeGroup">
       <button class="rbtn icon" id="themeToggleBtn" title="Toggle Accessible Dark Mode">☀️</button>
     </div>
@@ -381,6 +397,7 @@
       <div id="epubViewer" class="hidden"><div id="epubArea"></div></div>
       <div id="status"><div class="spinner"></div><div id="statusText">Loading…</div></div>
     </div>
+    <!-- Side Panels -->
     <div id="searchResults">
       <div class="sr-head">
         <span class="sr-title" id="srTitle">Results</span>
@@ -398,6 +415,7 @@
         <button class="filter-btn" data-filter="highlight">Highlights</button>
         <button class="filter-btn" data-filter="comment">Comments</button>
       </div>
+      <!-- Injected bulk copy and export controls... -->
       <div id="annoGlobalActions" style="display:flex; gap:6px; padding:8px 14px; border-bottom:1px solid var(--kap-line); background:#fff;">
         <button class="rbtn" id="copyAllBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📋 Copy All</button>
         <button class="rbtn" id="exportBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📥 Export Notes</button>
@@ -408,6 +426,7 @@
 </div>
 
 <script src="assets/document-data.js"></script>
+<!-- STREAMING_CHUNK: Initializing core script handlers... -->
 <script>
 (function(){
   var cfg = window.__DOC__ || {};
@@ -498,9 +517,10 @@ function startReader(){
       buildSlots(); hideStatus(); updateZoom(); setupObserver();
       render(1); render(2);
       AnnotationManager.init();
-      loadPDFBookmarks();
+      loadPDFBookmarks(); // Trigger bookmarks outline reader asynchronously on load
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
+    // Resolves outline destination page indices dynamically
     var outlineRegistry = {};
     function resolveDest(dest) {
       if (typeof dest === 'string') {
@@ -527,6 +547,8 @@ function startReader(){
       return Promise.resolve(null);
     }
 
+    // Fetches PDF bookmarks tree mapping and parses outline selection nodes
+    /* STREAMING_CHUNK: Extracting PDF outlines bookmarks... */
     function loadPDFBookmarks() {
       pdfDoc.getOutline().then(function(outline) {
         if (!outline || outline.length === 0) return;
@@ -608,6 +630,8 @@ function startReader(){
           return Promise.resolve(pr).then(function(){
             var items=tc.items, raw='', ranges=[];
             for(var k=0;k<items.length;k++){ var s=items[k].str||''; ranges.push({start:raw.length,end:raw.length+s.length,div:k}); raw+=s; }
+            
+            // Store the raw textual page payload dynamically in pageData
             pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase(), rawText:raw};
             
             textDivs.forEach(function(div, idx) {
@@ -765,9 +789,11 @@ function startReader(){
       hideStatus();
       book.locations.generate(1000).then(function(){ locReady=true; el.pageCount.textContent=book.locations.length(); updateLoc(); });
       AnnotationManager.init();
-      loadEpubTOC();
+      loadEpubTOC(); // Trigger EPUB outline reader asynchronously on load
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
+    // Parses table of contents navigation files dynamically
+    /* STREAMING_CHUNK: Extracting EPUB outlines bookmark navigation... */
     function loadEpubTOC() {
       book.loaded.navigation.then(function(nav) {
         if (!nav || !nav.toc || nav.toc.length === 0) return;
@@ -799,6 +825,7 @@ function startReader(){
 
     rendition.themes.default({ '::selection': { 'background':'rgba(36,15,110,.22)' } });
 
+    // Synchronous Registration of dark EPUB CSS properties
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
@@ -855,6 +882,7 @@ function startReader(){
   /* ==========================================================================
      HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
      ========================================================================== */
+  /* STREAMING_CHUNK: Instantiating the Annotation Manager module... */
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -942,6 +970,7 @@ function startReader(){
     }, 10);
   }
 
+  // Visual non-blocking toast notifications (replaces alerts)
   function showToast(message) {
     var existing = document.getElementById('kaplan-toast');
     if (existing) existing.remove();
@@ -971,6 +1000,7 @@ function startReader(){
     }, 2200);
   }
 
+  // Self-contained clipboard copier resilient to LMS iframe constraints
   function copyTextFallback(text) {
     var textArea = document.createElement("textarea");
     textArea.value = text;
@@ -991,12 +1021,14 @@ function startReader(){
     return success;
   }
 
+  // Unique key to prevent collision between multiple book packages in Brightspace LMS
   var storageKey = 'kaplan_reader_annos_' + (DOC.name || 'default').replace(/[^a-zA-Z0-9]/g, '_');
 
   var AnnotationManager = {
     annotations: [],
     currentFilter: 'all',
     
+    // Load existing highlights/comments from browser localStorage
     loadAnnotations: function() {
       try {
         var stored = localStorage.getItem(storageKey);
@@ -1006,6 +1038,7 @@ function startReader(){
       }
     },
 
+    // Save highlights/comments state directly to browser localStorage
     saveAnnotations: function() {
       try {
         localStorage.setItem(storageKey, JSON.stringify(this.annotations));
@@ -1014,13 +1047,14 @@ function startReader(){
 
     init: function() {
       var self = this;
-      self.loadAnnotations();
+      self.loadAnnotations(); // Synchronously load persistence stack prior to drawing
 
       document.getElementById('addHighlightBtn').onclick = function() { self.addHighlight(); };
       document.getElementById('addCommentBtn').onclick = function() { self.addComment(); };
       document.getElementById('toggleAnnotationsBtn').onclick = function() { self.toggleDrawer(); };
       document.getElementById('annoCloseBtn').onclick = function() { self.toggleDrawer(false); };
       
+      // Hook up global actions
       document.getElementById('copyAllBtn').onclick = function() { self.copyAllToClipboard(); };
       document.getElementById('exportBtn').onclick = function() { self.exportToFile(); };
 
@@ -1065,6 +1099,7 @@ function startReader(){
       };
 
       if (DOC.type === 'epub' && rendition) {
+        // High-legibility custom style rules applied inside the book iframe context
         rendition.themes.default({
           ".epub-highlight": { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
           ".epub-comment": { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" }
@@ -1107,6 +1142,7 @@ function startReader(){
         });
       }
 
+      // REDRAW TRIGGER: Force an immediate draw cycle on pre-rendered pages now that storage is parsed
       if (DOC.type === 'pdf') {
         Object.keys(rendered).forEach(function(pageNum) {
           if (rendered[pageNum]) {
@@ -1117,7 +1153,10 @@ function startReader(){
         self.renderAllEPUBAnnotations();
       }
 
+      // ACCESSIBLE DARK THEME: Apply persistent choice and tie change listener trigger
       initializeAccessibleDarkTheme();
+
+      // Initial drawer render
       this.renderDrawer();
     },
     
@@ -1214,6 +1253,7 @@ function startReader(){
       }
     },
     
+    /* STREAMING_CHUNK: Formatting side panel annotation list cards... */
     renderDrawer: function() {
       var self = this;
       var list = document.getElementById('annoList');
@@ -1233,6 +1273,7 @@ function startReader(){
         var commentHtml = a.comment ? '<div style="background:var(--kap-col-bg); padding:6px 8px; border-radius:6px; margin-top:6px; font-style:italic; border-left:3px solid var(--kap-purple); color:var(--kap-text)">'+esc(a.comment)+'</div>' : '';
         var location = a.docType === 'pdf' ? 'Page '+a.page : 'EPUB Location';
         
+        // Dynamic individual "Copy" button added next to the "Delete" pill
         return '<div class="sr-item" data-id="'+a.id+'" style="position:relative; margin-bottom:8px; padding-right:124px; min-height:64px;">' +
                  '<div style="position:absolute; right:10px; top:10px; display:flex; gap:4px;">' +
                    '<button class="copy-anno-btn" data-id="'+a.id+'" style="background:#f1f5f9; border:none; cursor:pointer; font-size:10px; font-weight:700; color:#475569; padding:4px 8px; border-radius:6px;" title="Copy to Clipboard">Copy</button>' +
@@ -1267,6 +1308,7 @@ function startReader(){
       });
     },
     
+    // Copy a single annotation with nice study formatting
     copySingleToClipboard: function(id) {
       var anno = this.annotations.find(function(a) { return a.id == id; });
       if (!anno) return;
@@ -1285,6 +1327,7 @@ function startReader(){
       }
     },
 
+    // Copy all current filtered annotations to clipboard at once
     copyAllToClipboard: function() {
       var self = this;
       var filtered = this.annotations.filter(function(a) {
@@ -1318,6 +1361,7 @@ function startReader(){
       }
     },
 
+    // Generate study file and download dynamically to user local drive
     exportToFile: function() {
       var self = this;
       var filtered = this.annotations.filter(function(a) {
@@ -1365,6 +1409,7 @@ function startReader(){
     },
 
     deleteAnnotation: function(id) {
+      // Robust ES5 matching loop
       var idx = -1;
       for (var i = 0; i < this.annotations.length; i++) {
         if (this.annotations[i].id == id) {
@@ -1376,7 +1421,7 @@ function startReader(){
       if (idx !== -1) {
         var anno = this.annotations[idx];
         this.annotations.splice(idx, 1);
-        this.saveAnnotations();
+        this.saveAnnotations(); // Persist changes immediately to local storage
         
         if (anno.docType === 'pdf') {
           this.renderPageAnnotations(anno.page);
@@ -1416,6 +1461,7 @@ function startReader(){
         var div = pd.textDivs[it.div];
         if (div) {
           var txt = '';
+          // Pull directly from pageData text array instead of nullable global rawIdx search tracker
           var fullRaw = pd.rawText;
           if (fullRaw) txt = fullRaw.slice(it.start, it.end);
           else txt = div.textContent;
@@ -1465,6 +1511,7 @@ function startReader(){
       var kind = anno.type === 'highlight' ? 'highlight' : 'underline';
       var cssClass = anno.type === 'highlight' ? 'epub-highlight' : 'epub-comment';
       
+      // Clear out the existing highlight range from DOM before re-rendering to prevent cumulative darkening
       try {
         rendition.annotations.remove(anno.cfiRange, kind);
       } catch(e) {}
@@ -1531,6 +1578,8 @@ function startReader(){
   function initializeAccessibleDarkTheme() {
     var themeToggleBtn = document.getElementById('themeToggleBtn');
     var appContainer = document.getElementById('app');
+    
+    // Global accessibility toggle preference
     var currentTheme = localStorage.getItem('kaplan_reader_darkmode') || 'light';
 
     function setMode(mode) {
@@ -1549,25 +1598,18 @@ function startReader(){
           rendition.themes.select('default');
         }
       }
-
-      // BUG-007 FIXED: GPU repaint force sequence to wipe toggler canvas latency instantly
-      var viewerArea = document.getElementById('viewerArea');
-      if (viewerArea) {
-        viewerArea.style.transform = 'translateZ(0)';
-        var reflow = viewerArea.offsetHeight; // force layout pass recalculation
-        setTimeout(function() {
-          viewerArea.style.transform = '';
-        }, 40);
-      }
     }
 
+    // Bind event trigger
     themeToggleBtn.onclick = function() {
       var targetMode = appContainer.classList.contains('dark-theme') ? 'light' : 'dark';
       setMode(targetMode);
     };
 
+    // Apply baseline choice on launch cycle
     setMode(currentTheme);
 
+    // Secure EPUB dynamic themes injection during rendition loops
     if (DOC.type === 'epub' && rendition) {
       rendition.on('rendered', function() {
         var freshMode = localStorage.getItem('kaplan_reader_darkmode') || 'light';
@@ -1580,7 +1622,9 @@ function startReader(){
 </body>
 </html></template>
 
+<!-- JSZip for building the package -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- STREAMING_CHUNK: Implementing the compilation engine... -->
 <script>
 (function(){
   "use strict";
@@ -1647,6 +1691,7 @@ function startReader(){
 
   genBtn.addEventListener('click', function(){ generate().catch(function(e){ log('✖ '+e.message,'err'); genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)'; }); });
 
+  /* STREAMING_CHUNK: Compiling package assets and bundling... */
   function generate(){
     if(!picked) return Promise.resolve();
     if(typeof JSZip==='undefined'){ alert('JSZip failed to load. Please connect to the internet and reload this page.'); return Promise.resolve(); }
@@ -1659,6 +1704,7 @@ function startReader(){
     var zip = new JSZip();
     var pkg = zip.folder(folder);
 
+    // Dynamic extraction of HTML template directly from DOM element - bypasses base64 emoji translation failures!
     var rawTemplate = document.getElementById('readerTemplate').innerHTML;
     if (!rawTemplate.trim().startsWith('<!DOCTYPE')) {
       rawTemplate = '<!DOCTYPE html>\n' + rawTemplate;
@@ -1693,7 +1739,7 @@ function startReader(){
         docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
         var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
         pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
-        pkg.file('index.html', rawTemplate);
+        pkg.file('index.html', rawTemplate); // Direct String Writer (perfect unicode/emoji support)
         pkg.file('README.txt', readme(name, folder, type, bundle));
         log('Compressing package…');
         return zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
