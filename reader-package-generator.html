@@ -857,12 +857,14 @@ function startReader(){
     });
 
     // Synchronous Registration of dark EPUB CSS properties
-    // Targets h1-h6 headers, spans within headers, and classes matching heading/title definitions to override unreadable blue colors verbatim in "image_a2cf82.png".
+    // Targets h1-h6 headers, spans within headers, specific structural classes, and hardcoded dark/blue colors verbatim in "image_a2cf82.png" and "image_a2e5ca.png"
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
-      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"]': { 'color': '#ffffff !important' },
-      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *': { 'color': '#ffffff !important' },
-      'a, a *': { 'color': '#a5b4fc !important' },
+      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"]': { 'color': '#ffffff !important' },
+      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *': { 'color': '#ffffff !important' },
+      'a, a *, [class*="link"], [class*="link"] *': { 'color': '#a5b4fc !important' },
+      '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"]': { 'color': '#ffffff !important' },
+      '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"]': { 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
       '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" },
