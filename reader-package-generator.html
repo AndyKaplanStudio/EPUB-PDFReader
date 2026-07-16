@@ -1,4 +1,3 @@
-<!-- STREAMING_CHUNK: Setting up the generator document layout... -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -111,7 +110,6 @@
 <!-- ==========================================================================
      INLINE DEPLOYABLE READER TEMPLATE (Dynamic compilation to index.html)
      ========================================================================== -->
-<!-- STREAMING_CHUNK: Embedding reader template... -->
 <template id="readerTemplate"><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -426,7 +424,6 @@
 </div>
 
 <script src="assets/document-data.js"></script>
-<!-- STREAMING_CHUNK: Initializing core script handlers... -->
 <script>
 (function(){
   var cfg = window.__DOC__ || {};
@@ -506,7 +503,7 @@ function startReader(){
     var uW = 612, uH = 792;
     var visible = {};
     var lowIdx = null, indexing = null;
-    var query = '', results = [], current = -1, pending = null;
+    var query = '', results = [], current = -1, shouldScrollToActiveSearch = false;
 
     var pdfSource = DOC.base64 ? { data: b64ToBytes(DOC.base64) } : { url: DOC.src };
     pdfjsLib.getDocument(pdfSource).promise.then(function(doc){
@@ -517,7 +514,7 @@ function startReader(){
       buildSlots(); hideStatus(); updateZoom(); setupObserver();
       render(1); render(2);
       AnnotationManager.init();
-      loadPDFBookmarks(); // Trigger bookmarks outline reader asynchronously on load
+      loadPDFBookmarks();
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
     // Resolves outline destination page indices dynamically
@@ -548,7 +545,6 @@ function startReader(){
     }
 
     // Fetches PDF bookmarks tree mapping and parses outline selection nodes
-    /* STREAMING_CHUNK: Extracting PDF outlines bookmarks... */
     function loadPDFBookmarks() {
       pdfDoc.getOutline().then(function(outline) {
         if (!outline || outline.length === 0) return;
@@ -707,18 +703,31 @@ function startReader(){
       return indexing;
     }
     function clearMarks(){ for(var p=1;p<=numPages;p++){ var pd=pageData[p]; if(pd) pd.textDivs.forEach(function(d){ if(d){ d.classList.remove('search-hit'); d.classList.remove('search-current'); } }); } }
+    
     function highlightPage(n){
       var pd=pageData[n]; if(!pd||!query) return;
       pd.textDivs.forEach(function(d){ if(d){ d.classList.remove('search-hit'); d.classList.remove('search-current'); } });
-      var curOcc = (pending && pending.page===n) ? pending.occ : -1;
+      
+      var curOcc = -1;
+      if (current >= 0 && current < results.length) {
+        var activeRes = results[current];
+        if (activeRes.page === n) {
+          curOcc = activeRes.occ;
+        }
+      }
+
       var occ=0, i=pd.lower.indexOf(query);
       while(i!==-1){
         var end=i+query.length, first=null, isCur=(occ===curOcc);
         for(var r=0;r<pd.ranges.length;r++){ var it=pd.ranges[r]; if(it.start<end && it.end>i){ var d=pd.textDivs[it.div]; if(d){ d.classList.add(isCur?'search-current':'search-hit'); if(!first)first=d; } } }
-        if(isCur && first){ scrollSpan(first); pending=null; }
+        if(isCur && first && shouldScrollToActiveSearch){
+          scrollSpan(first);
+          shouldScrollToActiveSearch = false;
+        }
         occ++; i=pd.lower.indexOf(query, i+Math.max(1,query.length));
       }
     }
+    
     var debounce;
     el.search.addEventListener('input', function(){ clearTimeout(debounce); debounce=setTimeout(doSearch,260); });
     el.search.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); if(results.length) step(e.shiftKey?-1:1); else doSearch(); } });
@@ -742,13 +751,16 @@ function startReader(){
         if(results.length){ current=0; focus(0); }
       });
     }
+    
     function focus(i){
       var r=results[i]; if(!r)return;
-      current=i; pending={page:r.page, occ:r.occ};
+      current=i;
+      shouldScrollToActiveSearch = true;
       el.searchInfo.textContent=(i+1)+' / '+results.length; markActive(i);
       goToPage(r.page);
       if(rendered[r.page]&&pageData[r.page]) highlightPage(r.page);
     }
+    
     function step(dir){ if(!results.length)return; current=(current+dir+results.length)%results.length; focus(current); }
     function renderList(q){
       el.srTitle.textContent = q ? (results.length+' result'+(results.length===1?'':'s')) : 'Results';
@@ -782,6 +794,7 @@ function startReader(){
     catch(e){ fail('Could not open EPUB.'+localHint); return; }
     rendition = book.renderTo('epubArea', { width:'100%', height:'100%', flow:'paginated', spread:'auto', allowScriptedContent:true });
     var fontPct=100, results=[], current=-1, locReady=false;
+    var activeSearchHighlightCfi = null;
 
     el.pageInput.value=1; el.pageCount.textContent='…';
 
@@ -789,11 +802,10 @@ function startReader(){
       hideStatus();
       book.locations.generate(1000).then(function(){ locReady=true; el.pageCount.textContent=book.locations.length(); updateLoc(); });
       AnnotationManager.init();
-      loadEpubTOC(); // Trigger EPUB outline reader asynchronously on load
+      loadEpubTOC();
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
     // Parses table of contents navigation files dynamically
-    /* STREAMING_CHUNK: Extracting EPUB outlines bookmark navigation... */
     function loadEpubTOC() {
       book.loaded.navigation.then(function(nav) {
         if (!nav || !nav.toc || nav.toc.length === 0) return;
@@ -823,14 +835,18 @@ function startReader(){
       });
     }
 
-    rendition.themes.default({ '::selection': { 'background':'rgba(36,15,110,.22)' } });
+    rendition.themes.default({
+      '::selection': { 'background':'rgba(36,15,110,.22)' },
+      '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' }
+    });
 
     // Synchronous Registration of dark EPUB CSS properties
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
-      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" }
+      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" },
+      '.epub-search-match': { 'background-color': 'rgba(165, 180, 252, 0.45) !important', 'border-bottom': '2px solid var(--kap-purple)' }
     });
 
     function updateLoc(){ if(!locReady)return; try{ var loc=rendition.currentLocation(); if(loc&&loc.start){ el.pageInput.value=book.locations.locationFromCfi(loc.start.cfi)+1; } }catch(e){} }
@@ -875,14 +891,26 @@ function startReader(){
       Array.prototype.forEach.call(el.srList.querySelectorAll('.sr-item'), function(node){ node.onclick=function(){ go(parseInt(node.dataset.i,10)); }; });
       openPanel();
     }
-    function go(i){ var r=results[i]; if(!r)return; current=i; el.searchInfo.textContent=(i+1)+' / '+results.length; rendition.display(r.cfi);
-      Array.prototype.forEach.call(el.srList.querySelectorAll('.sr-item'), function(node){ var on=parseInt(node.dataset.i,10)===i; node.classList.toggle('active',on); if(on) node.scrollIntoView({block:'nearest'}); }); }
+    
+    function go(i){
+      var r=results[i]; if(!r)return; current=i; el.searchInfo.textContent=(i+1)+' / '+results.length;
+      
+      if (activeSearchHighlightCfi) {
+        try { rendition.annotations.remove(activeSearchHighlightCfi, "highlight"); } catch(e){}
+      }
+      activeSearchHighlightCfi = r.cfi;
+      try {
+        rendition.annotations.add("highlight", r.cfi, {}, null, "epub-search-match");
+      } catch(e){}
+
+      rendition.display(r.cfi);
+      Array.prototype.forEach.call(el.srList.querySelectorAll('.sr-item'), function(node){ var on=parseInt(node.dataset.i,10)===i; node.classList.toggle('active',on); if(on) node.scrollIntoView({block:'nearest'}); });
+    }
   }
 
   /* ==========================================================================
      HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
      ========================================================================== */
-  /* STREAMING_CHUNK: Instantiating the Annotation Manager module... */
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -1253,7 +1281,6 @@ function startReader(){
       }
     },
     
-    /* STREAMING_CHUNK: Formatting side panel annotation list cards... */
     renderDrawer: function() {
       var self = this;
       var list = document.getElementById('annoList');
@@ -1273,7 +1300,6 @@ function startReader(){
         var commentHtml = a.comment ? '<div style="background:var(--kap-col-bg); padding:6px 8px; border-radius:6px; margin-top:6px; font-style:italic; border-left:3px solid var(--kap-purple); color:var(--kap-text)">'+esc(a.comment)+'</div>' : '';
         var location = a.docType === 'pdf' ? 'Page '+a.page : 'EPUB Location';
         
-        // Dynamic individual "Copy" button added next to the "Delete" pill
         return '<div class="sr-item" data-id="'+a.id+'" style="position:relative; margin-bottom:8px; padding-right:124px; min-height:64px;">' +
                  '<div style="position:absolute; right:10px; top:10px; display:flex; gap:4px;">' +
                    '<button class="copy-anno-btn" data-id="'+a.id+'" style="background:#f1f5f9; border:none; cursor:pointer; font-size:10px; font-weight:700; color:#475569; padding:4px 8px; border-radius:6px;" title="Copy to Clipboard">Copy</button>' +
@@ -1308,7 +1334,6 @@ function startReader(){
       });
     },
     
-    // Copy a single annotation with nice study formatting
     copySingleToClipboard: function(id) {
       var anno = this.annotations.find(function(a) { return a.id == id; });
       if (!anno) return;
@@ -1327,7 +1352,6 @@ function startReader(){
       }
     },
 
-    // Copy all current filtered annotations to clipboard at once
     copyAllToClipboard: function() {
       var self = this;
       var filtered = this.annotations.filter(function(a) {
@@ -1361,7 +1385,6 @@ function startReader(){
       }
     },
 
-    // Generate study file and download dynamically to user local drive
     exportToFile: function() {
       var self = this;
       var filtered = this.annotations.filter(function(a) {
@@ -1409,7 +1432,6 @@ function startReader(){
     },
 
     deleteAnnotation: function(id) {
-      // Robust ES5 matching loop
       var idx = -1;
       for (var i = 0; i < this.annotations.length; i++) {
         if (this.annotations[i].id == id) {
@@ -1421,7 +1443,7 @@ function startReader(){
       if (idx !== -1) {
         var anno = this.annotations[idx];
         this.annotations.splice(idx, 1);
-        this.saveAnnotations(); // Persist changes immediately to local storage
+        this.saveAnnotations();
         
         if (anno.docType === 'pdf') {
           this.renderPageAnnotations(anno.page);
@@ -1461,7 +1483,6 @@ function startReader(){
         var div = pd.textDivs[it.div];
         if (div) {
           var txt = '';
-          // Pull directly from pageData text array instead of nullable global rawIdx search tracker
           var fullRaw = pd.rawText;
           if (fullRaw) txt = fullRaw.slice(it.start, it.end);
           else txt = div.textContent;
@@ -1511,7 +1532,6 @@ function startReader(){
       var kind = anno.type === 'highlight' ? 'highlight' : 'underline';
       var cssClass = anno.type === 'highlight' ? 'epub-highlight' : 'epub-comment';
       
-      // Clear out the existing highlight range from DOM before re-rendering to prevent cumulative darkening
       try {
         rendition.annotations.remove(anno.cfiRange, kind);
       } catch(e) {}
@@ -1579,7 +1599,6 @@ function startReader(){
     var themeToggleBtn = document.getElementById('themeToggleBtn');
     var appContainer = document.getElementById('app');
     
-    // Global accessibility toggle preference
     var currentTheme = localStorage.getItem('kaplan_reader_darkmode') || 'light';
 
     function setMode(mode) {
@@ -1600,16 +1619,13 @@ function startReader(){
       }
     }
 
-    // Bind event trigger
     themeToggleBtn.onclick = function() {
       var targetMode = appContainer.classList.contains('dark-theme') ? 'light' : 'dark';
       setMode(targetMode);
     };
 
-    // Apply baseline choice on launch cycle
     setMode(currentTheme);
 
-    // Secure EPUB dynamic themes injection during rendition loops
     if (DOC.type === 'epub' && rendition) {
       rendition.on('rendered', function() {
         var freshMode = localStorage.getItem('kaplan_reader_darkmode') || 'light';
@@ -1624,7 +1640,6 @@ function startReader(){
 
 <!-- JSZip for building the package -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<!-- STREAMING_CHUNK: Implementing the compilation engine... -->
 <script>
 (function(){
   "use strict";
@@ -1691,7 +1706,6 @@ function startReader(){
 
   genBtn.addEventListener('click', function(){ generate().catch(function(e){ log('✖ '+e.message,'err'); genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)'; }); });
 
-  /* STREAMING_CHUNK: Compiling package assets and bundling... */
   function generate(){
     if(!picked) return Promise.resolve();
     if(typeof JSZip==='undefined'){ alert('JSZip failed to load. Please connect to the internet and reload this page.'); return Promise.resolve(); }
@@ -1704,7 +1718,6 @@ function startReader(){
     var zip = new JSZip();
     var pkg = zip.folder(folder);
 
-    // Dynamic extraction of HTML template directly from DOM element - bypasses base64 emoji translation failures!
     var rawTemplate = document.getElementById('readerTemplate').innerHTML;
     if (!rawTemplate.trim().startsWith('<!DOCTYPE')) {
       rawTemplate = '<!DOCTYPE html>\n' + rawTemplate;
@@ -1739,7 +1752,7 @@ function startReader(){
         docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
         var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
         pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
-        pkg.file('index.html', rawTemplate); // Direct String Writer (perfect unicode/emoji support)
+        pkg.file('index.html', rawTemplate);
         pkg.file('README.txt', readme(name, folder, type, bundle));
         log('Compressing package…');
         return zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
