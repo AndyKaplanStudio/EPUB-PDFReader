@@ -1636,6 +1636,48 @@ function startReader(){
     // Force normal (light) mode to be the launch style on load
     var currentTheme = 'light';
 
+    function applyThemeToIframes(mode) {
+      if (DOC.type !== 'epub') return;
+      try {
+        var iframes = document.querySelectorAll('#epubArea iframe');
+        iframes.forEach(function(iframe) {
+          try {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            if (doc) {
+              var styleId = 'epub-manual-theme-override';
+              var styleEl = doc.getElementById(styleId);
+              if (!styleEl) {
+                styleEl = doc.createElement('style');
+                styleEl.id = styleId;
+                doc.head.appendChild(styleEl);
+              }
+              if (mode === 'dark') {
+                styleEl.innerHTML = [
+                  'body { background: #121212 !important; color: #e2e8f0 !important; }',
+                  'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"], [class*="head_"] { color: #ffffff !important; }',
+                  'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] * { color: #ffffff !important; }',
+                  'a, a *, [class*="link"], [class*="link"] * { color: #a5b4fc !important; }',
+                  '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"] { color: #ffffff !important; }',
+                  '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] * { color: #ffffff !important; }',
+                  '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
+                  '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
+                  '.epub-highlight { background-color: rgba(254, 240, 138, 0.35) !important; border-bottom: 1.5px solid rgba(234, 179, 8, 0.3); cursor: pointer; }',
+                  '.epub-comment { background-color: rgba(186, 230, 253, 0.35) !important; border-bottom: 1.5px solid rgba(56, 189, 248, 0.3); cursor: pointer; }',
+                  '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid var(--kap-purple); }'
+                ].join('\n');
+              } else {
+                styleEl.innerHTML = '';
+              }
+            }
+          } catch(inner) {
+            console.warn("Manual theme override cross-origin blocked or failed: ", inner);
+          }
+        });
+      } catch(e) {
+        console.error(e);
+      }
+    }
+
     function setMode(mode) {
       if (mode === 'dark') {
         appContainer.classList.add('dark-theme');
@@ -1643,12 +1685,14 @@ function startReader(){
         if (rendition && rendition.themes) {
           rendition.themes.select('dark');
         }
+        applyThemeToIframes('dark');
       } else {
         appContainer.classList.remove('dark-theme');
         themeToggleBtn.textContent = '☀️';
         if (rendition && rendition.themes) {
           rendition.themes.select('default');
         }
+        applyThemeToIframes('light');
       }
     }
 
@@ -1664,8 +1708,8 @@ function startReader(){
     // Secure EPUB dynamic themes injection during rendition loops
     if (DOC.type === 'epub' && rendition) {
       rendition.on('rendered', function() {
-        var freshMode = appContainer.classList.contains('dark-theme') ? 'dark' : 'default';
-        rendition.themes.select(freshMode);
+        var freshMode = appContainer.classList.contains('dark-theme') ? 'dark' : 'light';
+        applyThemeToIframes(freshMode);
       });
     }
   }
