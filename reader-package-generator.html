@@ -818,7 +818,7 @@ function startReader(){
       hideStatus();
       book.locations.generate(1000).then(function(){ locReady=true; el.pageCount.textContent=book.locations.length(); updateLoc(); });
       AnnotationManager.init();
-      loadEpubTOC();
+      loadEpubTOC(); // Trigger EPUB outline reader asynchronously on load
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
     // Parses table of contents navigation files dynamically
@@ -857,11 +857,11 @@ function startReader(){
     });
 
     // Synchronous Registration of dark EPUB CSS properties
-    // Targets h1-h6 headers, spans within headers, specific structural classes, and hardcoded dark/blue colors verbatim in "image_a2cf82.png", "image_a2e5ca.png", and "image_a3b082.png"
+    // Targets h1-h6 headers, spans within headers, specific structural classes (including head_A as seen in image_3c099d.png), and hardcoded dark/blue colors
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
-      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"]': { 'color': '#ffffff !important' },
-      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *': { 'color': '#ffffff !important' },
+      'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"], [class*="head_"]': { 'color': '#ffffff !important' },
+      'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] *': { 'color': '#ffffff !important' },
       'a, a *, [class*="link"], [class*="link"] *': { 'color': '#a5b4fc !important' },
       '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"]': { 'color': '#ffffff !important' },
       '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] *': { 'color': '#ffffff !important' },
