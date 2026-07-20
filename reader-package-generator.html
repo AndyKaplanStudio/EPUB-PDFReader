@@ -249,7 +249,7 @@
     font-size:11px;font-weight:600;padding:5px;cursor:pointer;color:var(--kap-muted)}
   .filter-btn.active{background:var(--kap-purple);color:#fff;border-color:var(--kap-purple)}
 
-  /* Popover commenting bubble */
+  /* Popover commenting bubble styling */
   .anno-popover {
     position: absolute; background: #fff; border: 1px solid var(--kap-line);
     border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -268,6 +268,27 @@
   }
   .anno-popover .btn-save { background: var(--kap-purple); color: #fff; }
   .anno-popover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }
+
+  /* High-contrast Top-Right Popover Close Button */
+  .popover-close-x {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    border: none;
+    background: transparent;
+    color: var(--kap-muted);
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .popover-close-x:hover {
+    background: var(--kap-col-bg);
+    color: var(--kap-text);
+  }
 
   /* ==========================================================================
      ACCESSIBLE DARK THEME CUSTOMIZATIONS (WCAG AAA Compliance Guidelines)
@@ -867,9 +888,9 @@ function startReader(){
       'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"], [class*="head_"]': { 'color': '#ffffff !important' },
       'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] *': { 'color': '#ffffff !important' },
       'a, a *, [class*="link"], [class*="link"] * { color: #a5b4fc !important; }': {},
-      '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"]': { 'color': '#ffffff !important' },
-      '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] *': { 'color': '#ffffff !important' },
-      '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"]': { 'color': '#e2e8f0 !important' },
+      '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"] { color: #ffffff !important; }',
+      '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] * { color: #ffffff !important; }',
+      '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.4) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
       '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.4) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
@@ -1704,29 +1725,28 @@ function startReader(){
         
         var actionsHtml = isComment
           ? `<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>
-             <button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit 🖊️</button>
-             <button class="btn-close" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>`
+             <button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit 🖊s</button>`
           : `<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>
-             <button class="btn-add-note" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Add Note 💬</button>
-             <button class="btn-close" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>`;
+             <button class="btn-add-note" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Add Note 💬</button>`;
 
         popover.innerHTML = `
+          <button class="popover-close-x" title="Close">&times;</button>
           <div style="font-weight:700; font-size:11px; color:var(--kap-purple); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
             <span>${headerTitle}</span>
           </div>
-          <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:60px; overflow-y:auto; line-height:1.4;">"${esc(anno.text)}"</div>
+          <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:60px; overflow-y:auto; line-height:1.4; padding-right:15px;">"${esc(anno.text)}"</div>
           ${bodyHtml}
           <div class="popover-actions" style="margin-top:10px; display:flex; justify-content:flex-end; gap:6px;">
             ${actionsHtml}
           </div>
         `;
         
-        popover.querySelector('.btn-delete').onclick = function() {
-          self.deleteAnnotation(anno.id);
+        popover.querySelector('.popover-close-x').onclick = function() {
           popover.remove();
         };
-        
-        popover.querySelector('.btn-close').onclick = function() {
+
+        popover.querySelector('.btn-delete').onclick = function() {
+          self.deleteAnnotation(anno.id);
           popover.remove();
         };
 
@@ -1746,8 +1766,9 @@ function startReader(){
       // State B: Interactive Writing Input State
       function renderEdit() {
         popover.innerHTML = `
+          <button class="popover-close-x" title="Cancel">&times;</button>
           <div style="font-weight:700; font-size:11px; color:var(--kap-purple); margin-bottom:4px;">🖊️ EDIT COMMENT</div>
-          <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:50px; overflow-y:auto; line-height:1.4;">"${esc(anno.text)}"</div>
+          <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:50px; overflow-y:auto; line-height:1.4; padding-right:15px;">"${esc(anno.text)}"</div>
           <textarea style="width:100%; border:1px solid var(--kap-line); border-radius:8px; padding:6px 8px; font-family:inherit; font-size:13px; resize:none; height:80px; outline:none; background:#fff; color:var(--kap-text);">${esc(anno.comment || '')}</textarea>
           <div class="popover-actions" style="margin-top:8px; display:flex; justify-content:flex-end; gap:6px;">
             <button class="btn-cancel" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Cancel</button>
@@ -1768,6 +1789,11 @@ function startReader(){
           }
         };
         
+        popover.querySelector('.popover-close-x').onclick = function(e) {
+          e.stopPropagation();
+          renderReadOnly();
+        };
+
         popover.querySelector('.btn-cancel').onclick = function(e) {
           e.stopPropagation();
           renderReadOnly();
