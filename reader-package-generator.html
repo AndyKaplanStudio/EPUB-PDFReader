@@ -371,6 +371,43 @@
   #app.dark-theme .page-slot canvas {
     filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95);
   }
+
+  /* ==========================================================================
+     RECOMMENDATION 1: DYNAMIC RESPONSIVE SMART TOOLBAR STYLING
+     ========================================================================== */
+  #mobileGroup {
+    display: none !important;
+  }
+  @media (max-width: 768px) {
+    #mobileGroup {
+      display: flex !important;
+    }
+    #toolbar {
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    #toolbar .group {
+      border-right: none;
+    }
+    /* Hide the non-essential groups on initial mobile viewports */
+    #toolbar .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) {
+      display: none !important;
+    }
+    /* Expand settings list vertically as stacked control blocks when toggled */
+    #toolbar.menu-open {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    #toolbar.menu-open .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) {
+      display: flex !important;
+      flex-wrap: wrap;
+      padding: 10px 0;
+      border-top: 1px solid var(--kap-line);
+    }
+    #toolbar.menu-open #mobileGroup {
+      align-self: flex-end;
+    }
+  }
 </style>
 </head>
 <body>
@@ -389,7 +426,7 @@
       <span id="pageInfo"><input id="pageInput" value="1"> / <span id="pageCount">1</span></span>
       <button class="rbtn icon" id="nextBtn" title="Next">&#8250;</button>
     </div>
-    <div class="group">
+    <div class="group" id="zoomGroup">
       <button class="rbtn icon" id="zoomOut" title="Zoom out">&#8722;</button>
       <span id="zoomLevel">100%</span>
       <button class="rbtn icon" id="zoomIn" title="Zoom in">&#43;</button>
@@ -407,9 +444,13 @@
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
       <button class="rbtn icon" id="toggleAnnotationsBtn" title="Annotations Drawer">📋</button>
     </div>
-    <!-- Theme Toggle Suite (Injected right after annotation tools) -->
+    <!-- Theme Toggle Suite -->
     <div class="group" id="themeGroup">
       <button class="rbtn icon" id="themeToggleBtn" title="Toggle Accessible Dark Mode">☀️</button>
+    </div>
+    <!-- Responsive Collapsible Gears Trigger Group -->
+    <div class="group" id="mobileGroup">
+      <button class="rbtn icon" id="mobileMenuBtn" title="Toggle More Controls">⚙️</button>
     </div>
   </div>
   <div id="stage">
@@ -505,6 +546,14 @@ function startReader(){
   }
   el.srClose.onclick = closePanel;
   el.searchList.onclick = function(){ el.panel.classList.contains('open') ? closePanel() : openPanel(); };
+
+  // Mobile gear button click listener
+  var mobileMenuBtn = document.getElementById('mobileMenuBtn');
+  if (mobileMenuBtn) {
+    mobileMenuBtn.onclick = function() {
+      document.getElementById('toolbar').classList.toggle('menu-open');
+    };
+  }
 
   var pageData = [];
   var rawIdx = null;
