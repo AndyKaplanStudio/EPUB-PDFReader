@@ -202,14 +202,16 @@
 
   /* Annotation In-text Highlighting Styles (High Legibility Soft Palette) */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.35) !important; /* Elegant Pastel yellow */
-    border-bottom: 1.5px solid rgba(234, 179, 8, 0.3);
+    background-color: rgba(254, 240, 138, 0.4) !important; /* Elegant Pastel yellow */
+    border-bottom: 1.5px solid rgba(234, 179, 8, 0.5);
     cursor: pointer;
+    pointer-events: auto !important;
   }
   .pdf-comment-highlight {
-    background-color: rgba(186, 230, 253, 0.35) !important; /* Elegant Pastel blue */
-    border-bottom: 1.5px solid rgba(56, 189, 248, 0.3);
+    background-color: rgba(186, 230, 253, 0.4) !important; /* Elegant Pastel blue */
+    border-bottom: 1.5px solid rgba(56, 189, 248, 0.5);
     cursor: pointer;
+    pointer-events: auto !important;
   }
   
   /* EPUB Layout */
@@ -854,7 +856,9 @@ function startReader(){
 
     rendition.themes.default({
       '::selection': { 'background':'rgba(36,15,110,.22)' },
-      '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' }
+      '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' },
+      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.4) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
+      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.4) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" }
     });
 
     // Synchronous Registration of dark EPUB CSS properties
@@ -862,13 +866,13 @@ function startReader(){
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
       'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"], [class*="head_"]': { 'color': '#ffffff !important' },
       'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] *': { 'color': '#ffffff !important' },
-      'a, a *, [class*="link"], [class*="link"] *': { 'color': '#a5b4fc !important' },
+      'a, a *, [class*="link"], [class*="link"] * { color: #a5b4fc !important; }': {},
       '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"]': { 'color': '#ffffff !important' },
       '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] *': { 'color': '#ffffff !important' },
       '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"]': { 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' },
-      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
-      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" },
+      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.4) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
+      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.4) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
       '.epub-search-match': { 'background-color': 'rgba(165, 180, 252, 0.45) !important', 'border-bottom': '2px solid var(--kap-purple)' }
     });
 
@@ -1044,7 +1048,7 @@ function startReader(){
     };
   }
 
-  function showPopover(rect, onSave, onCancel) {
+  function showPopover(rect, onSave, onCancel, existingText) {
     var existing = document.querySelector('.anno-popover');
     if (existing) existing.remove();
     
@@ -1064,6 +1068,9 @@ function startReader(){
     document.body.appendChild(popover);
     
     var textarea = popover.querySelector('textarea');
+    if (existingText) {
+      textarea.value = existingText;
+    }
     textarea.focus();
     
     popover.querySelector('.btn-cancel').onclick = function() {
@@ -1211,7 +1218,7 @@ function startReader(){
         if (mark) {
           var id = mark.dataset.annoId;
           var anno = self.annotations.find(function(a) { return a.id == id; });
-          if (anno && anno.comment) {
+          if (anno) {
             var rect = mark.getBoundingClientRect();
             self.showViewCommentPopover(rect, anno);
           }
@@ -1219,12 +1226,6 @@ function startReader(){
       };
 
       if (DOC.type === 'epub' && rendition) {
-        // High-legibility custom style rules applied inside the book iframe context
-        rendition.themes.default({
-          ".epub-highlight": { "background-color": "rgba(254, 240, 138, 0.35) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.3)", "cursor": "pointer" },
-          ".epub-comment": { "background-color": "rgba(186, 230, 253, 0.35) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.3)", "cursor": "pointer" }
-        });
-        
         rendition.on('selected', function(cfiRange, contents) {
           activeEPUBSelection = {
             cfiRange: cfiRange,
@@ -1240,25 +1241,44 @@ function startReader(){
           if (contents) {
             // Interactive click lookup inside sandbox iframe to trigger the popover
             contents.document.addEventListener('click', function(e) {
-              var mark = e.target.closest('.epub-comment');
+              // Dual-Layer Interception 1: Check direct pointer matches
+              var mark = e.target.closest('.epub-comment, .epub-highlight');
+              var matchedAnno = null;
+              
               if (mark) {
-                var selectedText = mark.textContent || '';
-                var anno = self.annotations.find(function(a) {
-                  return a.docType === 'epub' && a.type === 'comment' && selectedText.indexOf(a.text) !== -1;
+                var selectedText = (mark.textContent || '').trim();
+                matchedAnno = self.annotations.find(function(a) {
+                  return a.docType === 'epub' && (selectedText.indexOf(a.text.trim()) !== -1 || a.text.trim().indexOf(selectedText) !== -1);
                 });
-                if (anno && anno.comment) {
-                  var iframe = rendition.manager.views._views[0].iframe;
-                  var iframeRect = iframe.getBoundingClientRect();
-                  var markRect = mark.getBoundingClientRect();
-                  var rect = {
-                    top: markRect.top + iframeRect.top,
-                    left: markRect.left + iframeRect.left,
-                    width: markRect.width,
-                    height: markRect.height,
-                    bottom: markRect.bottom + iframeRect.top
-                  };
-                  self.showViewCommentPopover(rect, anno);
+              }
+              
+              // Dual-Layer Interception 2: Check target text-node substring matches
+              if (!matchedAnno) {
+                var clickedText = (e.target.textContent || '').trim();
+                if (clickedText) {
+                  self.annotations.forEach(function(anno) {
+                    if (anno.docType === 'epub') {
+                      var annoTextClean = (anno.text || '').trim();
+                      if (annoTextClean && clickedText.indexOf(annoTextClean) !== -1) {
+                        matchedAnno = anno;
+                      }
+                    }
+                  });
                 }
+              }
+
+              if (matchedAnno) {
+                var iframe = rendition.manager.views._views[0].iframe;
+                var iframeRect = iframe.getBoundingClientRect();
+                var targetRect = e.target.getBoundingClientRect();
+                var rect = {
+                  top: targetRect.top + iframeRect.top,
+                  left: targetRect.left + iframeRect.left,
+                  width: targetRect.width,
+                  height: targetRect.height,
+                  bottom: targetRect.bottom + iframeRect.top
+                };
+                self.showViewCommentPopover(rect, matchedAnno);
               }
             });
 
@@ -1673,18 +1693,31 @@ function startReader(){
       popover.className = 'anno-popover';
       popover.style.width = '280px';
       
-      // State A: Read-Only Metadata View
+      // State A: Read-Only Metadata View (Handles both Plain Highlights and Comments)
       function renderReadOnly() {
+        var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
+        var headerTitle = isComment ? '💬 VIEW COMMENT' : '🖊️ VIEW HIGHLIGHT';
+        
+        var bodyHtml = isComment 
+          ? `<div style="font-size:13px; color:var(--kap-text); background:var(--kap-col-bg); padding:8px; border-radius:6px; border-left:3px solid var(--kap-purple); line-height:1.4; word-break:break-word; max-height:120px; overflow-y:auto;">${esc(anno.comment)}</div>`
+          : `<div style="font-size:12px; font-style:italic; color:var(--kap-muted); text-align:center; padding:6px; background:var(--kap-col-bg); border-radius:6px;">No personal notes added to this highlight yet.</div>`;
+        
+        var actionsHtml = isComment
+          ? `<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>
+             <button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit 🖊️</button>
+             <button class="btn-close" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>`
+          : `<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>
+             <button class="btn-add-note" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Add Note 💬</button>
+             <button class="btn-close" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>`;
+
         popover.innerHTML = `
           <div style="font-weight:700; font-size:11px; color:var(--kap-purple); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
-            <span>💬 VIEW COMMENT</span>
+            <span>${headerTitle}</span>
           </div>
           <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:60px; overflow-y:auto; line-height:1.4;">"${esc(anno.text)}"</div>
-          <div style="font-size:13px; color:var(--kap-text); background:var(--kap-col-bg); padding:8px; border-radius:6px; border-left:3px solid var(--kap-purple); line-height:1.4; word-break:break-word; max-height:120px; overflow-y:auto;">${esc(anno.comment)}</div>
+          ${bodyHtml}
           <div class="popover-actions" style="margin-top:10px; display:flex; justify-content:flex-end; gap:6px;">
-            <button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>
-            <button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit 🖊️</button>
-            <button class="btn-close" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Close</button>
+            ${actionsHtml}
           </div>
         `;
         
@@ -1693,14 +1726,21 @@ function startReader(){
           popover.remove();
         };
         
-        popover.querySelector('.btn-edit').onclick = function(e) {
-          e.stopPropagation();
-          renderEdit();
-        };
-        
         popover.querySelector('.btn-close').onclick = function() {
           popover.remove();
         };
+
+        if (isComment) {
+          popover.querySelector('.btn-edit').onclick = function(e) {
+            e.stopPropagation();
+            renderEdit();
+          };
+        } else {
+          popover.querySelector('.btn-add-note').onclick = function(e) {
+            e.stopPropagation();
+            renderEdit();
+          };
+        }
       }
       
       // State B: Interactive Writing Input State
@@ -1708,7 +1748,7 @@ function startReader(){
         popover.innerHTML = `
           <div style="font-weight:700; font-size:11px; color:var(--kap-purple); margin-bottom:4px;">🖊️ EDIT COMMENT</div>
           <div style="font-size:12px; font-style:italic; color:var(--kap-muted); margin-bottom:8px; max-height:50px; overflow-y:auto; line-height:1.4;">"${esc(anno.text)}"</div>
-          <textarea style="width:100%; border:1px solid var(--kap-line); border-radius:8px; padding:6px 8px; font-family:inherit; font-size:13px; resize:none; height:80px; outline:none; background:#fff; color:var(--kap-text);">${esc(anno.comment)}</textarea>
+          <textarea style="width:100%; border:1px solid var(--kap-line); border-radius:8px; padding:6px 8px; font-family:inherit; font-size:13px; resize:none; height:80px; outline:none; background:#fff; color:var(--kap-text);">${esc(anno.comment || '')}</textarea>
           <div class="popover-actions" style="margin-top:8px; display:flex; justify-content:flex-end; gap:6px;">
             <button class="btn-cancel" style="background:var(--kap-col-bg); color:var(--kap-text); border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Cancel</button>
             <button class="btn-save" style="background:var(--kap-purple); color:#fff; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Save 💾</button>
@@ -1744,12 +1784,13 @@ function startReader(){
             var target = self.annotations.find(function(a) { return a.id == anno.id; });
             if (target) {
               target.comment = updatedText;
+              target.type = 'comment'; // Upgrade simple highlight to a comment annotation type
               self.saveAnnotations();
               
               if (anno.docType === 'pdf') {
                 self.renderPageAnnotations(anno.page);
               } else if (anno.docType === 'epub') {
-                self.renderAllEPUBAnnotations();
+                self.renderEPUBAnnotation(target);
               }
               
               self.renderDrawer();
@@ -1757,7 +1798,7 @@ function startReader(){
               popover.remove();
             }
           } else {
-            showToast('Comment cannot be empty. Use Delete instead.');
+            showToast('Comment cannot be empty.');
           }
         }
       }
@@ -1824,8 +1865,8 @@ function startReader(){
           '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] * { color: #ffffff !important; }',
           '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
           '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
-          '.epub-highlight { background-color: rgba(254, 240, 138, 0.35) !important; border-bottom: 1.5px solid rgba(234, 179, 8, 0.3); cursor: pointer; }',
-          '.epub-comment { background-color: rgba(186, 230, 253, 0.35) !important; border-bottom: 1.5px solid rgba(56, 189, 248, 0.3); cursor: pointer; }',
+          '.epub-highlight { background-color: rgba(254, 240, 138, 0.4) !important; border-bottom: 1.5px solid rgba(234, 179, 8, 0.5); cursor: pointer !important; pointer-events: auto !important; }',
+          '.epub-comment { background-color: rgba(186, 230, 253, 0.4) !important; border-bottom: 1.5px solid rgba(56, 189, 248, 0.5); cursor: pointer !important; pointer-events: auto !important; }',
           '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid var(--kap-purple); }'
         );
       } else {
