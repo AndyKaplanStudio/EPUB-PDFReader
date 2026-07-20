@@ -213,6 +213,34 @@
     cursor: pointer;
     pointer-events: auto !important;
   }
+
+  /* Dynamic Margin Balloon for PDF Comments */
+  .margin-comment-balloon {
+    position: absolute;
+    right: -36px;
+    width: 25px;
+    height: 25px;
+    background: #fff;
+    border: 1px solid var(--kap-line);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(34,33,33,0.15);
+    font-size: 11px;
+    z-index: 10;
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .margin-comment-balloon:hover {
+    transform: scale(1.15);
+    border-color: var(--kap-purple);
+  }
+  #app.dark-theme .margin-comment-balloon {
+    background: #1e1e1e !important;
+    border-color: var(--kap-line) !important;
+    color: var(--kap-text) !important;
+  }
   
   /* EPUB Layout */
   #epubViewer{position:absolute;inset:0}
@@ -1300,6 +1328,50 @@ function startReader(){
           self.renderAllEPUBAnnotations();
           var contents = rendition.getContents()[0];
           if (contents) {
+            var iframeDoc = contents.document;
+
+            // Remove existing inline comment badges to prevent duplicates
+            var oldBadges = iframeDoc.querySelectorAll('.epub-comment-badge');
+            for (var ob = 0; ob < oldBadges.length; ob++) {
+              oldBadges[ob].parentNode.removeChild(oldBadges[ob]);
+            }
+
+            // Find all elements representing comments inside the iframe
+            setTimeout(function() {
+              var comments = iframeDoc.querySelectorAll('.epub-comment');
+              comments.forEach(function(el) {
+                // If it doesn't already have a badge right after it
+                if (!el.nextSibling || !el.nextSibling.classList || !el.nextSibling.classList.contains('epub-comment-badge')) {
+                  var badge = iframeDoc.createElement('span');
+                  badge.className = 'epub-comment-badge';
+                  badge.style.cssText = 'cursor:pointer; margin-left:3px; font-size:11px; display:inline-block; vertical-align:super; line-height:1; user-select:none; pointer-events:auto !important;';
+                  badge.textContent = '💬';
+                  el.parentNode.insertBefore(badge, el.nextSibling);
+
+                  badge.onclick = function(e) {
+                    e.stopPropagation();
+                    var iframe = rendition.manager.views._views[0].iframe;
+                    var iframeRect = iframe.getBoundingClientRect();
+                    var targetRect = el.getBoundingClientRect();
+                    var rect = {
+                      top: targetRect.top + iframeRect.top,
+                      left: targetRect.left + iframeRect.left,
+                      width: targetRect.width,
+                      height: targetRect.height,
+                      bottom: targetRect.bottom + iframeRect.top
+                    };
+                    var clickedText = (el.textContent || '').trim();
+                    var matchedAnno = self.annotations.find(function(a) {
+                      return a.docType === 'epub' && clickedText.indexOf(a.text.trim()) !== -1;
+                    });
+                    if (matchedAnno) {
+                      self.showViewCommentPopover(rect, matchedAnno);
+                    }
+                  };
+                }
+              });
+            }, 100);
+
             // Interactive click lookup inside sandbox iframe to trigger the popover
             contents.document.addEventListener('click', function(e) {
               // Dual-Layer Interception 1: Check direct pointer matches
@@ -1688,9 +1760,19 @@ function startReader(){
       });
       
       var self = this;
+      var slot = slots[pageNum];
+      if (slot) {
+        // Clear old margin balloons safely
+        var oldBalloons = slot.querySelectorAll('.margin-comment-balloon');
+        for (var b = 0; b < oldBalloons.length; b++) {
+          oldBalloons[b].parentNode.removeChild(oldBalloons[b]);
+        }
+      }
+
       this.annotations.forEach(function(anno) {
         if (anno.docType === 'pdf' && anno.page === pageNum) {
           var className = anno.type === 'highlight' ? 'pdf-highlight' : 'pdf-comment-highlight';
+          var injectedFirstSpan = null;
           
           pd.ranges.forEach(function(it) {
             var div = pd.textDivs[it.div];
@@ -1717,9 +1799,30 @@ function startReader(){
               mark.textContent = middle;
               div.appendChild(mark);
               
+              if (!injectedFirstSpan && className === 'pdf-comment-highlight') {
+                injectedFirstSpan = div;
+              }
+              
               if (after) div.appendChild(document.createTextNode(after));
             }
           });
+
+          // Render Margin Balloon if we found a valid comment highlight anchor
+          if (injectedFirstSpan && slot) {
+            var balloon = document.createElement('div');
+            balloon.className = 'margin-comment-balloon';
+            balloon.dataset.annoId = anno.id;
+            balloon.innerHTML = '💬';
+            // Align visually with the top of the highlighted sentence
+            balloon.style.top = (injectedFirstSpan.offsetTop) + 'px';
+            slot.appendChild(balloon);
+
+            balloon.onclick = function(e) {
+              e.stopPropagation();
+              var rect = balloon.getBoundingClientRect();
+              self.showViewCommentPopover(rect, anno);
+            };
+          }
         }
       });
     },
@@ -1928,7 +2031,7 @@ function startReader(){
           'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] * { color: #ffffff !important; }',
           'a, a *, [class*="link"], [class*="link"] * { color: #a5b4fc !important; }',
           '[style*="color"][style*="blue"], [style*="color"][style*="navy"], [style*="color"][style*="#000080"], [style*="color"][style*="#0000FF"], [style*="color"][style*="#0000ff"], [style*="color"][style*="#00F"], [style*="color"][style*="#00f"], [style*="color"][style*="rgb(0, 0, 128)"], [style*="color"][style*="rgb(0,0,128)"], [style*="color"][style*="rgb(0, 255)"], [style*="color"][style*="rgb(0,0,255)"], [style*="color"][style*="#240F6E"], [style*="color"][style*="#1F497D"], [style*="color"][style*="#002060"], [style*="color"][style*="#1f497d"], [style*="color"][style*="#002060"] { color: #ffffff !important; }',
-          '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] *, [style*="color"][style*="#240F6E"] *, [style*="color"][style*="#1F497D"] *, [style*="color"][style*="#002060"] * { color: #ffffff !important; }',
+          '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] * { color: #ffffff !important; }',
           '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
           '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
           '.epub-highlight { background-color: rgba(254, 240, 138, 0.4) !important; border-bottom: 1.5px solid rgba(234, 179, 8, 0.5); cursor: pointer !important; pointer-events: auto !important; }',
