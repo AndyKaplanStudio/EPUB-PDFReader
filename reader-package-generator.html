@@ -1667,6 +1667,15 @@ function startReader(){
                 ].join('\n');
               } else {
                 styleEl.innerHTML = '';
+                // Sweep document head and instantly clear any lingering stylesheets injected by EPUB.js containing our dark background code
+                var styleTags = doc.head.querySelectorAll('style');
+                styleTags.forEach(function(st) {
+                  if (st.id !== 'epub-manual-theme-override') {
+                    if (st.textContent.indexOf('#121212') !== -1) {
+                      st.remove();
+                    }
+                  }
+                });
               }
             }
           } catch(inner) {
