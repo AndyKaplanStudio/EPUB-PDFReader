@@ -1615,7 +1615,9 @@ function startReader(){
           this.renderPageAnnotations(anno.page);
         } else if (anno.docType === 'epub') {
           try {
-            rendition.annotations.remove(anno.cfiRange, anno.type === 'highlight' ? 'highlight' : 'underline');
+            // Force removal of both types to catch any old lingering annotations
+            rendition.annotations.remove(anno.cfiRange, 'highlight');
+            rendition.annotations.remove(anno.cfiRange, 'underline');
           } catch(e) {}
           this.renderAllEPUBAnnotations();
         }
@@ -1706,11 +1708,15 @@ function startReader(){
     
     renderEPUBAnnotation: function(anno) {
       if (anno.docType !== 'epub') return;
-      var kind = anno.type === 'highlight' ? 'highlight' : 'underline';
+      
+      // We force EPUB.js to use the HTML-based "highlight" engine for both types, 
+      // otherwise it uses an SVG path for "underline" that ignores CSS background colors.
+      var kind = 'highlight'; 
       var cssClass = anno.type === 'highlight' ? 'epub-highlight' : 'epub-comment';
       
       try {
-        rendition.annotations.remove(anno.cfiRange, kind);
+        rendition.annotations.remove(anno.cfiRange, 'highlight');
+        rendition.annotations.remove(anno.cfiRange, 'underline');
       } catch(e) {}
       
       rendition.annotations.add(kind, anno.cfiRange, {}, null, cssClass);
