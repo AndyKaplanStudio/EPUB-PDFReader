@@ -218,7 +218,7 @@
   .pdf-comment-badge, .epub-comment-badge {
     cursor: pointer !important;
     font-size: 14px !important;
-    margin-left: 3px !important;
+    margin-right: 4px !important;
     display: inline-block !important;
     vertical-align: super !important;
     line-height: 1 !important;
@@ -1680,20 +1680,20 @@ function startReader(){
               
               div.innerHTML = '';
               if (before) div.appendChild(document.createTextNode(before));
-              
-              var mark = document.createElement('span');
-              mark.className = className;
-              mark.dataset.annoId = anno.id;
-              mark.textContent = middle;
-              div.appendChild(mark);
 
-              if (anno.type === 'comment') {
+              if (anno.type === 'comment' && overlapStart === anno.startOffset) {
                 var badge = document.createElement('span');
                 badge.className = 'pdf-comment-badge';
                 badge.dataset.annoId = anno.id;
                 badge.textContent = '💬';
                 div.appendChild(badge);
               }
+              
+              var mark = document.createElement('span');
+              mark.className = className;
+              mark.dataset.annoId = anno.id;
+              mark.textContent = middle;
+              div.appendChild(mark);
               
               if (after) div.appendChild(document.createTextNode(after));
             }
@@ -1757,15 +1757,15 @@ function startReader(){
                   self.showViewCommentPopover(rect, anno);
                 };
 
-                var endNode = range.endContainer;
-                if (endNode.nodeType === 3) {
-                  var textAfter = endNode.splitText(range.endOffset);
-                  endNode.parentNode.insertBefore(badge, textAfter);
-                } else if (endNode.nodeType === 1) {
-                  if (endNode.nextSibling) {
-                    endNode.parentNode.insertBefore(badge, endNode.nextSibling);
+                var startNode = range.startContainer;
+                if (startNode.nodeType === 3) {
+                  var textAt = startNode.splitText(range.startOffset);
+                  startNode.parentNode.insertBefore(badge, textAt);
+                } else if (startNode.nodeType === 1) {
+                  if (startNode.childNodes.length > range.startOffset) {
+                    startNode.insertBefore(badge, startNode.childNodes[range.startOffset]);
                   } else {
-                    endNode.appendChild(badge);
+                    startNode.appendChild(badge);
                   }
                 }
               }
