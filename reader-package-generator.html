@@ -200,16 +200,18 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation In-text Highlighting Styles */
+  /* Annotation In-text Highlighting Styles (Refined Pastel Tints) */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.4) !important;
-    border-bottom: 1.5px solid rgba(234, 179, 8, 0.5);
+    background-color: rgba(254, 240, 138, 0.45) !important;
+    border-bottom: 2px solid #eab308;
+    border-radius: 3px;
     cursor: pointer;
     pointer-events: auto !important;
   }
   .pdf-comment-highlight {
-    background-color: rgba(186, 230, 253, 0.4) !important;
-    border-bottom: 1.5px solid rgba(56, 189, 248, 0.5);
+    background-color: rgba(186, 230, 253, 0.45) !important;
+    border-bottom: 2px solid #0284c7;
+    border-radius: 3px;
     cursor: pointer;
     pointer-events: auto !important;
   }
@@ -917,8 +919,8 @@ function startReader(){
     rendition.themes.default({
       '::selection': { 'background':'rgba(36,15,110,.22)' },
       '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' },
-      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.4) !important", "border-bottom": "1.5px solid rgba(234, 179, 8, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" },
-      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.4) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" }
+      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.45) !important", "border-bottom": "2px solid #eab308", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" },
+      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.45) !important", "border-bottom": "2px solid #0284c7", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" }
     });
 
     rendition.themes.register('dark', {
@@ -1473,7 +1475,7 @@ function startReader(){
                    '<span>'+location+'</span>' +
                    '<span style="font-size:10px; color:var(--kap-muted); margin-right:12px;">'+dateStr+'</span>' +
                  '</div>' +
-                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#1d4ed8')+'">'+indicator+'</div>' +
+                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#0284c7')+'">'+indicator+'</div>' +
                  '<div style="color:var(--kap-text); font-size:12.5px; line-height:1.4;">"'+esc(a.text)+'"</div>' +
                  commentHtml +
                '</div>';
@@ -1685,7 +1687,7 @@ function startReader(){
                 var badge = document.createElement('span');
                 badge.className = 'pdf-comment-badge';
                 badge.dataset.annoId = anno.id;
-                badge.textContent = '💬';
+                badge.textContent = '💬 ';
                 div.appendChild(badge);
               }
               
@@ -1738,7 +1740,7 @@ function startReader(){
                 var badge = doc.createElement('span');
                 badge.className = 'epub-comment-badge';
                 badge.dataset.annoId = anno.id;
-                badge.textContent = '💬';
+                badge.textContent = '💬 ';
                 badge.title = anno.comment ? ('Comment: ' + anno.comment) : 'View comment';
                 
                 badge.onclick = function(e) {
@@ -1765,7 +1767,7 @@ function startReader(){
                   if (startNode.childNodes.length > range.startOffset) {
                     startNode.insertBefore(badge, startNode.childNodes[range.startOffset]);
                   } else {
-                    startNode.appendChild(badge);
+                    startNode.insertBefore(badge, startNode.firstChild);
                   }
                 }
               }
@@ -1966,8 +1968,8 @@ function startReader(){
           '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] * { color: #ffffff !important; }',
           '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
           '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
-          '.epub-highlight { background-color: rgba(254, 240, 138, 0.4) !important; border-bottom: 1.5px solid rgba(234, 179, 8, 0.5); cursor: pointer !important; pointer-events: auto !important; }',
-          '.epub-comment { background-color: rgba(186, 230, 253, 0.4) !important; border-bottom: 1.5px solid rgba(56, 189, 248, 0.5); cursor: pointer !important; pointer-events: auto !important; }',
+          '.epub-highlight { background-color: rgba(254, 240, 138, 0.3) !important; border-bottom: 2px solid #facc15; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
+          '.epub-comment { background-color: rgba(56, 189, 248, 0.25) !important; border-bottom: 2px solid #38bdf8; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
           '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid #240F6E; }'
         );
       } else {
