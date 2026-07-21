@@ -209,8 +209,8 @@
     pointer-events: auto !important;
   }
   .pdf-comment-highlight {
-    background-color: rgba(186, 230, 253, 0.45) !important;
-    border-bottom: 2px solid #0284c7;
+    background-color: rgba(251, 207, 232, 0.5) !important;
+    border-bottom: 2px solid #ec4899;
     border-radius: 3px;
     cursor: pointer;
     pointer-events: auto !important;
@@ -920,7 +920,7 @@ function startReader(){
       '::selection': { 'background':'rgba(36,15,110,.22)' },
       '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' },
       '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.45) !important", "border-bottom": "2px solid #eab308", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" },
-      '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.45) !important", "border-bottom": "2px solid #0284c7", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" }
+      '.epub-comment': { "background-color": "rgba(251, 207, 232, 0.5) !important", "border-bottom": "2px solid #ec4899", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" }
     });
 
     rendition.themes.register('dark', {
@@ -1475,7 +1475,7 @@ function startReader(){
                    '<span>'+location+'</span>' +
                    '<span style="font-size:10px; color:var(--kap-muted); margin-right:12px;">'+dateStr+'</span>' +
                  '</div>' +
-                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#0284c7')+'">'+indicator+'</div>' +
+                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#be185d')+'">'+indicator+'</div>' +
                  '<div style="color:var(--kap-text); font-size:12.5px; line-height:1.4;">"'+esc(a.text)+'"</div>' +
                  commentHtml +
                '</div>';
@@ -1975,7 +1975,7 @@ function startReader(){
           '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
           '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
           '.epub-highlight { background-color: rgba(254, 240, 138, 0.3) !important; border-bottom: 2px solid #facc15; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
-          '.epub-comment { background-color: rgba(56, 189, 248, 0.25) !important; border-bottom: 2px solid #38bdf8; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
+          '.epub-comment { background-color: rgba(244, 114, 182, 0.3) !important; border-bottom: 2px solid #f472b6; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
           '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid #240F6E; }'
         );
       } else {
