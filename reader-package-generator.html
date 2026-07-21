@@ -200,46 +200,30 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation In-text Highlighting Styles (High Legibility Soft Palette) */
+  /* Annotation In-text Highlighting Styles */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.4) !important; /* Elegant Pastel yellow */
+    background-color: rgba(254, 240, 138, 0.4) !important;
     border-bottom: 1.5px solid rgba(234, 179, 8, 0.5);
     cursor: pointer;
     pointer-events: auto !important;
   }
   .pdf-comment-highlight {
-    background-color: rgba(186, 230, 253, 0.4) !important; /* Elegant Pastel blue */
+    background-color: rgba(186, 230, 253, 0.4) !important;
     border-bottom: 1.5px solid rgba(56, 189, 248, 0.5);
     cursor: pointer;
     pointer-events: auto !important;
   }
 
-  /* Dynamic Margin Balloon for PDF Comments */
-  .margin-comment-balloon {
-    position: absolute;
-    right: -36px;
-    width: 25px;
-    height: 25px;
-    background: #fff;
-    border: 1px solid var(--kap-line);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(34,33,33,0.15);
-    font-size: 11px;
-    z-index: 10;
-    transition: transform 0.12s ease, border-color 0.12s ease;
-  }
-  .margin-comment-balloon:hover {
-    transform: scale(1.15);
-    border-color: var(--kap-purple);
-  }
-  #app.dark-theme .margin-comment-balloon {
-    background: #1e1e1e !important;
-    border-color: var(--kap-line) !important;
-    color: var(--kap-text) !important;
+  /* Inline Comment Badge for PDF & EPUB */
+  .pdf-comment-badge, .epub-comment-badge {
+    cursor: pointer !important;
+    font-size: 14px !important;
+    margin-left: 3px !important;
+    display: inline-block !important;
+    vertical-align: super !important;
+    line-height: 1 !important;
+    user-select: none !important;
+    pointer-events: auto !important;
   }
   
   /* EPUB Layout */
@@ -281,18 +265,18 @@
   .anno-popover {
     position: absolute; background: #fff; border: 1px solid var(--kap-line);
     border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 12px; z-index: 1000; width: 240px; display: flex; flex-direction: column; gap: 8px;
+    padding: 12px; z-index: 1000; width: 280px; display: flex; flex-direction: column; gap: 8px;
   }
   .anno-popover textarea {
     width: 100%; border: 1px solid var(--kap-line); border-radius: 8px;
-    padding: 6px 8px; font-family: inherit; font-size: 13px; resize: none; height: 60px; outline: none;
+    padding: 6px 8px; font-family: inherit; font-size: 13px; resize: none; height: 75px; outline: none;
   }
   .anno-popover textarea:focus { border-color: var(--kap-purple); }
   .anno-popover .popover-actions {
-    display: flex; justify-content: flex-end; gap: 6px;
+    display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;
   }
   .anno-popover button {
-    padding: 4px 10px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600;
+    padding: 5px 10px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600;
   }
   .anno-popover .btn-save { background: var(--kap-purple); color: #fff; }
   .anno-popover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }
@@ -318,15 +302,13 @@
     color: var(--kap-text);
   }
 
-  /* ==========================================================================
-     ACCESSIBLE DARK THEME CUSTOMIZATIONS (WCAG AAA Compliance Guidelines)
-     ========================================================================== */
+  /* ACCESSIBLE DARK THEME CUSTOMIZATIONS */
   #app.dark-theme {
-    --kap-purple: #a5b4fc; /* accessible soft lavender/blue accent */
-    --kap-text: #e2e8f0;   /* readable soft white text */
-    --kap-muted: #94a3b8;  /* mid-toned light slate gray */
-    --kap-line: #2d3748;   /* deep border outline lines */
-    --kap-col-bg: #121212; /* base background */
+    --kap-purple: #a5b4fc;
+    --kap-text: #e2e8f0;
+    --kap-muted: #94a3b8;
+    --kap-line: #2d3748;
+    --kap-col-bg: #121212;
     --kap-hero-bg: #121212;
   }
   #app.dark-theme #toolbar,
@@ -385,13 +367,9 @@
     background-color: #1e1e1e !important;
     border-bottom: 1px solid var(--kap-line) !important;
   }
-
-  /* Accessible Selection Layers */
   #app.dark-theme .textLayer ::selection {
     background: rgba(165, 180, 252, 0.35) !important;
   }
-
-  /* GPU Accelerated Canvas Color-Inversion pipeline */
   #app.dark-theme .page-slot {
     background-color: #1e1e1e !important;
     border-color: var(--kap-line) !important;
@@ -400,9 +378,7 @@
     filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95);
   }
 
-  /* ==========================================================================
-     RECOMMENDATION 1: DYNAMIC RESPONSIVE SMART TOOLBAR STYLING
-     ========================================================================== */
+  /* Responsive Toolbar Styling */
   #mobileGroup {
     display: none !important;
   }
@@ -417,11 +393,9 @@
     #toolbar .group {
       border-right: none;
     }
-    /* Hide the non-essential groups on initial mobile viewports */
     #toolbar .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) {
       display: none !important;
     }
-    /* Expand settings list vertically as stacked control blocks when toggled */
     #toolbar.menu-open {
       flex-direction: column;
       align-items: stretch;
@@ -442,7 +416,6 @@
 <div id="app">
   <div class="kap-topbar" aria-hidden="true"></div>
   <div id="toolbar">
-    <!-- Chapter Dropdown injected directly inside Title Group -->
     <div class="group" id="titleGroup" style="display:flex; align-items:center; gap:8px;">
       <span id="docTitle">Document</span>
       <select id="tocSelect" style="display:none;" aria-label="Table of Contents">
@@ -466,17 +439,14 @@
       <button class="rbtn icon" id="searchList" title="Show results list">&#9776;</button>
       <span id="searchInfo"></span>
     </div>
-    <!-- Annotation Tool Suite -->
     <div class="group" id="annotationTools">
       <button class="rbtn icon" id="addHighlightBtn" title="Highlight Selection" disabled>🖊️</button>
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
       <button class="rbtn icon" id="toggleAnnotationsBtn" title="Annotations Drawer">📋</button>
     </div>
-    <!-- Theme Toggle Suite -->
     <div class="group" id="themeGroup">
       <button class="rbtn icon" id="themeToggleBtn" title="Toggle Accessible Dark Mode">☀️</button>
     </div>
-    <!-- Responsive Collapsible Gears Trigger Group -->
     <div class="group" id="mobileGroup">
       <button class="rbtn icon" id="mobileMenuBtn" title="Toggle More Controls">⚙️</button>
     </div>
@@ -487,7 +457,6 @@
       <div id="epubViewer" class="hidden"><div id="epubArea"></div></div>
       <div id="status"><div class="spinner"></div><div id="statusText">Loading…</div></div>
     </div>
-    <!-- Side Panels -->
     <div id="searchResults">
       <div class="sr-head">
         <span class="sr-title" id="srTitle">Results</span>
@@ -505,7 +474,6 @@
         <button class="filter-btn" data-filter="highlight">Highlights</button>
         <button class="filter-btn" data-filter="comment">Comments</button>
       </div>
-      <!-- Injected bulk copy and export controls... -->
       <div id="annoGlobalActions" style="display:flex; gap:6px; padding:8px 14px; border-bottom:1px solid var(--kap-line); background:#fff;">
         <button class="rbtn" id="copyAllBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📋 Copy All</button>
         <button class="rbtn" id="exportBtn" style="flex:1; font-size:11px; padding:6px; border-radius:6px; text-align:center;">📥 Export Notes</button>
@@ -575,7 +543,6 @@ function startReader(){
   el.srClose.onclick = closePanel;
   el.searchList.onclick = function(){ el.panel.classList.contains('open') ? closePanel() : openPanel(); };
 
-  // Mobile gear button click listener
   var mobileMenuBtn = document.getElementById('mobileMenuBtn');
   if (mobileMenuBtn) {
     mobileMenuBtn.onclick = function() {
@@ -625,7 +592,6 @@ function startReader(){
       loadPDFBookmarks();
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
-    // Resolves outline destination page indices dynamically
     var outlineRegistry = {};
     function resolveDest(dest) {
       if (typeof dest === 'string') {
@@ -652,7 +618,6 @@ function startReader(){
       return Promise.resolve(null);
     }
 
-    // Fetches PDF bookmarks tree mapping and parses outline selection nodes
     function loadPDFBookmarks() {
       pdfDoc.getOutline().then(function(outline) {
         if (!outline || outline.length === 0) return;
@@ -734,8 +699,6 @@ function startReader(){
           return Promise.resolve(pr).then(function(){
             var items=tc.items, raw='', ranges=[];
             for(var k=0;k<items.length;k++){ var s=items[k].str||''; ranges.push({start:raw.length,end:raw.length+s.length,div:k}); raw+=s; }
-            
-            // Store the raw textual page payload dynamically in pageData
             pageData[n]={textDivs:textDivs, ranges:ranges, lower:raw.toLowerCase(), rawText:raw};
             
             textDivs.forEach(function(div, idx) {
@@ -922,7 +885,6 @@ function startReader(){
       loadEpubTOC();
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
-    // Parses table of contents navigation files dynamically
     function loadEpubTOC() {
       book.loaded.navigation.then(function(nav) {
         if (!nav || !nav.toc || nav.toc.length === 0) return;
@@ -959,13 +921,11 @@ function startReader(){
       '.epub-comment': { "background-color": "rgba(186, 230, 253, 0.4) !important", "border-bottom": "1.5px solid rgba(56, 189, 248, 0.5)", "cursor": "pointer !important", "pointer-events": "auto !important" }
     });
 
-    // Synchronous Registration of dark EPUB CSS properties
     rendition.themes.register('dark', {
       'body': { 'background': '#121212 !important', 'color': '#e2e8f0 !important' },
       '::selection': { 'background': 'rgba(165, 180, 252, 0.3) !important' }
     });
 
-    // EPUB.js official content hook handles automatic iframe typography injection as sections load
     rendition.hooks.content.register(function(contents) {
       applyEPUBStyles(contents);
     });
@@ -977,11 +937,9 @@ function startReader(){
         if(loc && loc.start){ 
           var displayed = loc.start.displayed;
           if (displayed && typeof displayed.page === 'number' && typeof displayed.total === 'number') {
-            // Visual Column Mapping prevents page indication leaps
             el.pageInput.value = displayed.page;
             el.pageCount.textContent = displayed.total + ' (Ch. ' + (loc.start.index + 1) + ')';
           } else {
-            // Loc index fallback if displayed column totals are not parsed
             var locIndex = book.locations.locationFromCfi(loc.start.cfi) + 1;
             el.pageInput.value = locIndex;
             el.pageCount.textContent = book.locations.length();
@@ -1003,7 +961,6 @@ function startReader(){
         var displayed = loc.start.displayed;
         var currentSectPage = displayed.page;
         var totalSectPages = displayed.total;
-        // Intelligently step relative column layouts to avoid offset leaps
         if (n >= 1 && n <= totalSectPages) {
           var diff = n - currentSectPage;
           if (diff > 0) {
@@ -1014,7 +971,6 @@ function startReader(){
           return;
         }
       }
-      // Fallback path
       n = Math.max(1, Math.min(book.locations.length(), n)); 
       var cfi = book.locations.cfiFromLocation(n-1); 
       if(cfi) rendition.display(cfi); 
@@ -1028,7 +984,6 @@ function startReader(){
 
     function applyFont(){ 
       el.zoomLevel.textContent = epubZoomPercent + '%'; 
-      // Force instant repaint of active iframe sheets
       var activeViews = rendition.manager.views._views;
       if (activeViews && activeViews.length > 0 && activeViews[0].contents) {
         applyEPUBStyles(activeViews[0].contents);
@@ -1152,7 +1107,7 @@ function startReader(){
     `;
     
     popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';
-    popover.style.left = Math.max(10, Math.min(window.innerWidth - 250, rect.left + window.scrollX + (rect.width/2) - 120)) + 'px';
+    popover.style.left = Math.max(10, Math.min(window.innerWidth - 290, rect.left + window.scrollX + (rect.width/2) - 140)) + 'px';
     
     document.body.appendChild(popover);
     
@@ -1186,7 +1141,6 @@ function startReader(){
     }, 10);
   }
 
-  // Visual non-blocking toast notifications (replaces alerts)
   function showToast(message) {
     var existing = document.getElementById('kaplan-toast');
     if (existing) existing.remove();
@@ -1216,7 +1170,6 @@ function startReader(){
     }, 2200);
   }
 
-  // Self-contained clipboard copier resilient to LMS iframe constraints
   function copyTextFallback(text) {
     var textArea = document.createElement("textarea");
     textArea.value = text;
@@ -1237,14 +1190,12 @@ function startReader(){
     return success;
   }
 
-  // Unique key to prevent collision between multiple book packages in Brightspace LMS
   var storageKey = 'kaplan_reader_annos_' + (DOC.name || 'default').replace(/[^a-zA-Z0-9]/g, '_');
 
   var AnnotationManager = {
     annotations: [],
     currentFilter: 'all',
     
-    // Load existing highlights/comments from browser localStorage
     loadAnnotations: function() {
       try {
         var stored = localStorage.getItem(storageKey);
@@ -1254,7 +1205,6 @@ function startReader(){
       }
     },
 
-    // Save highlights/comments state directly to browser localStorage
     saveAnnotations: function() {
       try {
         localStorage.setItem(storageKey, JSON.stringify(this.annotations));
@@ -1263,14 +1213,13 @@ function startReader(){
 
     init: function() {
       var self = this;
-      self.loadAnnotations(); // Synchronously load persistence stack prior to drawing
+      self.loadAnnotations();
 
       document.getElementById('addHighlightBtn').onclick = function() { self.addHighlight(); };
       document.getElementById('addCommentBtn').onclick = function() { self.addComment(); };
       document.getElementById('toggleAnnotationsBtn').onclick = function() { self.toggleDrawer(); };
       document.getElementById('annoCloseBtn').onclick = function() { self.toggleDrawer(false); };
       
-      // Hook up global actions
       document.getElementById('copyAllBtn').onclick = function() { self.copyAllToClipboard(); };
       document.getElementById('exportBtn').onclick = function() { self.exportToFile(); };
 
@@ -1303,7 +1252,7 @@ function startReader(){
       document.addEventListener('touchend', handleSelectionCheck);
       
       document.getElementById('pdfViewer').onclick = function(e) {
-        var mark = e.target.closest('.pdf-highlight, .pdf-comment-highlight');
+        var mark = e.target.closest('.pdf-highlight, .pdf-comment-highlight, .pdf-comment-badge');
         if (mark) {
           var id = mark.dataset.annoId;
           var anno = self.annotations.find(function(a) { return a.id == id; });
@@ -1326,120 +1275,69 @@ function startReader(){
 
         rendition.on('rendered', function() {
           self.renderAllEPUBAnnotations();
-          var contents = rendition.getContents()[0];
-          if (contents) {
-            var iframeDoc = contents.document;
-
-            // Remove existing inline comment badges to prevent duplicates
-            var oldBadges = iframeDoc.querySelectorAll('.epub-comment-badge');
-            for (var ob = 0; ob < oldBadges.length; ob++) {
-              oldBadges[ob].parentNode.removeChild(oldBadges[ob]);
-            }
-
-            // Find all elements representing comments inside the iframe
-            setTimeout(function() {
-              var comments = iframeDoc.querySelectorAll('.epub-comment');
-              comments.forEach(function(el) {
-                // If it doesn't already have a badge right after it
-                if (!el.nextSibling || !el.nextSibling.classList || !el.nextSibling.classList.contains('epub-comment-badge')) {
-                  var badge = iframeDoc.createElement('span');
-                  badge.className = 'epub-comment-badge';
-                  badge.style.cssText = 'cursor:pointer; margin-left:3px; font-size:11px; display:inline-block; vertical-align:super; line-height:1; user-select:none; pointer-events:auto !important;';
-                  badge.textContent = '💬';
-                  el.parentNode.insertBefore(badge, el.nextSibling);
-
-                  badge.onclick = function(e) {
-                    e.stopPropagation();
-                    var iframe = rendition.manager.views._views[0].iframe;
-                    var iframeRect = iframe.getBoundingClientRect();
-                    var targetRect = el.getBoundingClientRect();
-                    var rect = {
-                      top: targetRect.top + iframeRect.top,
-                      left: targetRect.left + iframeRect.left,
-                      width: targetRect.width,
-                      height: targetRect.height,
-                      bottom: targetRect.bottom + iframeRect.top
-                    };
-                    var clickedText = (el.textContent || '').trim();
-                    var matchedAnno = self.annotations.find(function(a) {
-                      return a.docType === 'epub' && clickedText.indexOf(a.text.trim()) !== -1;
+          var contentsList = rendition.getContents();
+          if (contentsList && contentsList.length > 0) {
+            var contents = contentsList[0];
+            if (contents && contents.document) {
+              contents.document.addEventListener('click', function(e) {
+                var mark = e.target.closest('.epub-comment, .epub-highlight, .epub-comment-badge');
+                var matchedAnno = null;
+                
+                if (mark) {
+                  if (mark.dataset && mark.dataset.annoId) {
+                    matchedAnno = self.annotations.find(function(a) { return a.id == mark.dataset.annoId; });
+                  } else {
+                    var selectedText = (mark.textContent || '').trim();
+                    matchedAnno = self.annotations.find(function(a) {
+                      return a.docType === 'epub' && (selectedText.indexOf(a.text.trim()) !== -1 || a.text.trim().indexOf(selectedText) !== -1);
                     });
-                    if (matchedAnno) {
-                      self.showViewCommentPopover(rect, matchedAnno);
-                    }
+                  }
+                }
+                
+                if (!matchedAnno) {
+                  var clickedText = (e.target.textContent || '').trim();
+                  if (clickedText) {
+                    self.annotations.forEach(function(anno) {
+                      if (anno.docType === 'epub') {
+                        var annoTextClean = (anno.text || '').trim();
+                        if (annoTextClean && clickedText.indexOf(annoTextClean) !== -1) {
+                          matchedAnno = anno;
+                        }
+                      }
+                    });
+                  }
+                }
+
+                if (matchedAnno) {
+                  var iframe = rendition.manager.views._views[0].iframe;
+                  var iframeRect = iframe.getBoundingClientRect();
+                  var targetRect = e.target.getBoundingClientRect();
+                  var rect = {
+                    top: targetRect.top + iframeRect.top,
+                    left: targetRect.left + iframeRect.left,
+                    width: targetRect.width,
+                    height: targetRect.height,
+                    bottom: targetRect.bottom + iframeRect.top
                   };
+                  self.showViewCommentPopover(rect, matchedAnno);
                 }
               });
-            }, 100);
 
-            // Interactive click lookup inside sandbox iframe to trigger the popover
-            contents.document.addEventListener('click', function(e) {
-              // Dual-Layer Interception 1: Check direct pointer matches
-              var mark = e.target.closest('.epub-comment, .epub-highlight');
-              var matchedAnno = null;
-              
-              if (mark) {
-                var selectedText = (mark.textContent || '').trim();
-                matchedAnno = self.annotations.find(function(a) {
-                  return a.docType === 'epub' && (selectedText.indexOf(a.text.trim()) !== -1 || a.text.trim().indexOf(selectedText) !== -1);
-                });
-              }
-              
-              // Dual-Layer Interception 2: Check target text-node substring matches
-              if (!matchedAnno) {
-                var clickedText = (e.target.textContent || '').trim();
-                if (clickedText) {
-                  self.annotations.forEach(function(anno) {
-                    if (anno.docType === 'epub') {
-                      var annoTextClean = (anno.text || '').trim();
-                      if (annoTextClean && clickedText.indexOf(annoTextClean) !== -1) {
-                        matchedAnno = anno;
-                      }
-                    }
-                  });
-                }
-              }
-
-              if (matchedAnno) {
-                var iframe = rendition.manager.views._views[0].iframe;
-                var iframeRect = iframe.getBoundingClientRect();
-                var targetRect = e.target.getBoundingClientRect();
-                var rect = {
-                  top: targetRect.top + iframeRect.top,
-                  left: targetRect.left + iframeRect.left,
-                  width: targetRect.width,
-                  height: targetRect.height,
-                  bottom: targetRect.bottom + iframeRect.top
-                };
-                self.showViewCommentPopover(rect, matchedAnno);
-              }
-            });
-
-            contents.document.addEventListener('mouseup', function() {
-              setTimeout(function() {
-                var sel = contents.window.getSelection();
-                if (!sel || sel.isCollapsed) {
-                  activeEPUBSelection = null;
-                  document.getElementById('addHighlightBtn').disabled = true;
-                  document.getElementById('addCommentBtn').disabled = true;
-                }
-              }, 50);
-            });
-            contents.document.addEventListener('touchend', function() {
-              setTimeout(function() {
-                var sel = contents.window.getSelection();
-                if (!sel || sel.isCollapsed) {
-                  activeEPUBSelection = null;
-                  document.getElementById('addHighlightBtn').disabled = true;
-                  document.getElementById('addCommentBtn').disabled = true;
-                }
-              }, 50);
-            });
+              contents.document.addEventListener('mouseup', function() {
+                setTimeout(function() {
+                  var sel = contents.window.getSelection();
+                  if (!sel || sel.isCollapsed) {
+                    activeEPUBSelection = null;
+                    document.getElementById('addHighlightBtn').disabled = true;
+                    document.getElementById('addCommentBtn').disabled = true;
+                  }
+                }, 50);
+              });
+            }
           }
         });
       }
 
-      // REDRAW TRIGGER: Force an immediate draw cycle on pre-rendered pages now that storage is parsed
       if (DOC.type === 'pdf') {
         Object.keys(rendered).forEach(function(pageNum) {
           if (rendered[pageNum]) {
@@ -1450,10 +1348,7 @@ function startReader(){
         self.renderAllEPUBAnnotations();
       }
 
-      // ACCESSIBLE DARK THEME: Apply persistent choice and tie change listener trigger
       initializeAccessibleDarkTheme();
-
-      // Initial drawer render
       this.renderDrawer();
     },
     
@@ -1717,7 +1612,10 @@ function startReader(){
         if (anno.docType === 'pdf') {
           this.renderPageAnnotations(anno.page);
         } else if (anno.docType === 'epub') {
-          rendition.annotations.remove(anno.cfiRange, anno.type === 'highlight' ? 'highlight' : 'underline');
+          try {
+            rendition.annotations.remove(anno.cfiRange, anno.type === 'highlight' ? 'highlight' : 'underline');
+          } catch(e) {}
+          this.renderAllEPUBAnnotations();
         }
         this.renderDrawer();
       }
@@ -1760,19 +1658,9 @@ function startReader(){
       });
       
       var self = this;
-      var slot = slots[pageNum];
-      if (slot) {
-        // Clear old margin balloons safely
-        var oldBalloons = slot.querySelectorAll('.margin-comment-balloon');
-        for (var b = 0; b < oldBalloons.length; b++) {
-          oldBalloons[b].parentNode.removeChild(oldBalloons[b]);
-        }
-      }
-
       this.annotations.forEach(function(anno) {
         if (anno.docType === 'pdf' && anno.page === pageNum) {
           var className = anno.type === 'highlight' ? 'pdf-highlight' : 'pdf-comment-highlight';
-          var injectedFirstSpan = null;
           
           pd.ranges.forEach(function(it) {
             var div = pd.textDivs[it.div];
@@ -1798,31 +1686,18 @@ function startReader(){
               mark.dataset.annoId = anno.id;
               mark.textContent = middle;
               div.appendChild(mark);
-              
-              if (!injectedFirstSpan && className === 'pdf-comment-highlight') {
-                injectedFirstSpan = div;
+
+              if (anno.type === 'comment') {
+                var badge = document.createElement('span');
+                badge.className = 'pdf-comment-badge';
+                badge.dataset.annoId = anno.id;
+                badge.textContent = '💬';
+                div.appendChild(badge);
               }
               
               if (after) div.appendChild(document.createTextNode(after));
             }
           });
-
-          // Render Margin Balloon if we found a valid comment highlight anchor
-          if (injectedFirstSpan && slot) {
-            var balloon = document.createElement('div');
-            balloon.className = 'margin-comment-balloon';
-            balloon.dataset.annoId = anno.id;
-            balloon.innerHTML = '💬';
-            // Align visually with the top of the highlighted sentence
-            balloon.style.top = (injectedFirstSpan.offsetTop) + 'px';
-            slot.appendChild(balloon);
-
-            balloon.onclick = function(e) {
-              e.stopPropagation();
-              var rect = balloon.getBoundingClientRect();
-              self.showViewCommentPopover(rect, anno);
-            };
-          }
         }
       });
     },
@@ -1837,8 +1712,69 @@ function startReader(){
       } catch(e) {}
       
       rendition.annotations.add(kind, anno.cfiRange, {}, null, cssClass);
+      this.renderEPUBBadges();
     },
     
+    renderEPUBBadges: function() {
+      if (!rendition) return;
+      var contentsList = rendition.getContents();
+      if (!contentsList || !contentsList.length) return;
+      
+      var self = this;
+      contentsList.forEach(function(contents) {
+        if (!contents || !contents.document) return;
+        var doc = contents.document;
+        
+        var oldBadges = doc.querySelectorAll('.epub-comment-badge');
+        for (var i = 0; i < oldBadges.length; i++) {
+          oldBadges[i].parentNode.removeChild(oldBadges[i]);
+        }
+        
+        self.annotations.forEach(function(anno) {
+          if (anno.docType === 'epub' && anno.type === 'comment' && anno.cfiRange) {
+            try {
+              var range = contents.range(anno.cfiRange);
+              if (range) {
+                var badge = doc.createElement('span');
+                badge.className = 'epub-comment-badge';
+                badge.dataset.annoId = anno.id;
+                badge.textContent = '💬';
+                badge.title = anno.comment ? ('Comment: ' + anno.comment) : 'View comment';
+                
+                badge.onclick = function(e) {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  var iframe = rendition.manager.views._views[0].iframe;
+                  var iframeRect = iframe.getBoundingClientRect();
+                  var targetRect = badge.getBoundingClientRect();
+                  var rect = {
+                    top: targetRect.top + iframeRect.top,
+                    left: targetRect.left + iframeRect.left,
+                    width: targetRect.width,
+                    height: targetRect.height,
+                    bottom: targetRect.bottom + iframeRect.top
+                  };
+                  self.showViewCommentPopover(rect, anno);
+                };
+
+                var endNode = range.endContainer;
+                if (endNode.nodeType === 3) {
+                  var textAfter = endNode.splitText(range.endOffset);
+                  endNode.parentNode.insertBefore(badge, textAfter);
+                } else if (endNode.nodeType === 1) {
+                  if (endNode.nextSibling) {
+                    endNode.parentNode.insertBefore(badge, endNode.nextSibling);
+                  } else {
+                    endNode.appendChild(badge);
+                  }
+                }
+              }
+            } catch(err) {}
+          }
+        });
+      });
+    },
+
     renderAllEPUBAnnotations: function() {
       var self = this;
       this.annotations.forEach(function(anno) {
@@ -1846,6 +1782,7 @@ function startReader(){
           self.renderEPUBAnnotation(anno);
         }
       });
+      self.renderEPUBBadges();
     },
     
     showViewCommentPopover: function(rect, anno) {
@@ -1855,9 +1792,8 @@ function startReader(){
       
       var popover = document.createElement('div');
       popover.className = 'anno-popover';
-      popover.style.width = '280px';
+      popover.style.width = '290px';
       
-      // State A: Read-Only Metadata View (Handles both Plain Highlights and Comments)
       function renderReadOnly() {
         var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
         var headerTitle = isComment ? '💬 VIEW COMMENT' : '🖊️ VIEW HIGHLIGHT';
@@ -1868,7 +1804,7 @@ function startReader(){
         
         var actionsHtml = isComment
           ? '<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>' +
-             '<button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit 🖊s</button>'
+             '<button class="btn-edit" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Edit Note</button>'
           : '<button class="btn-delete" style="background:#fee2e2; color:#dc2626; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Delete</button>' +
              '<button class="btn-add-note" style="background:#e0f2fe; color:#0369a1; border:none; padding:5px 10px; font-size:11px; border-radius:6px; font-weight:600; cursor:pointer;">Add Note 💬</button>';
 
@@ -1907,7 +1843,6 @@ function startReader(){
         }
       }
       
-      // State B: Interactive Writing Input State
       function renderEdit() {
         popover.innerHTML = 
           '<button class="popover-close-x" title="Cancel">&times;</button>' +
@@ -1953,7 +1888,7 @@ function startReader(){
             var target = self.annotations.find(function(a) { return a.id == anno.id; });
             if (target) {
               target.comment = updatedText;
-              target.type = 'comment'; // Upgrade simple highlight to a comment annotation type
+              target.type = 'comment';
               self.saveAnnotations();
               
               if (anno.docType === 'pdf') {
@@ -2009,17 +1944,14 @@ function startReader(){
         doc.head.appendChild(styleEl);
       }
 
-      // Calculate absolute sizes based on top zoom states to neutralize recursive layout compounding
       var calcSize = Math.round(14 * (epubZoomPercent / 100));
       var calcLine = Math.round(24 * (epubZoomPercent / 100));
       
       var cssRules = [];
       
-      // Inject unified absolute scale properties to all structural blocks
       cssRules.push(
         'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; }'
       );
-      // Inline visual wrappers safely inherit the scale, eliminating ballooning loops
       cssRules.push(
         'span, b, i, strong, em, code, small, sub, sup, a { font-size: inherit !important; line-height: inherit !important; }'
       );
@@ -2039,7 +1971,6 @@ function startReader(){
           '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid #240F6E; }'
         );
       } else {
-        // Clear manual custom overrides instantly
         styleEl.innerHTML = '';
         var styleTags = doc.head.querySelectorAll('style');
         styleTags.forEach(function(st) {
@@ -2052,16 +1983,12 @@ function startReader(){
       }
 
       styleEl.innerHTML = cssRules.join('\n');
-    } catch(e) {
-      console.warn("Iframe styling override failed (cross-origin sandboxed): ", e);
-    }
+    } catch(e) {}
   }
 
   function initializeAccessibleDarkTheme() {
     var themeToggleBtn = document.getElementById('themeToggleBtn');
     var appContainer = document.getElementById('app');
-    
-    // Core default launches in Light mode synchronously
     var currentTheme = 'light';
 
     function applyThemeToIframes(mode) {
