@@ -137,30 +137,41 @@
   #docTitle{font-weight:600;font-size:14px;letter-spacing:.1px;max-width:240px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   
-  /* Outline Selector dropdown styles */
+  /* Outline Selector dropdown styles (Recommendation 3: Premium Pill Styling) */
   #tocSelect {
-    max-width: 180px;
-    border: 1px solid var(--kap-line);
-    border-radius: 8px;
-    padding: 6px 12px;
+    max-width: 190px;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 0 0 1.5px var(--kap-purple) inset;
+    padding: 7px 30px 7px 14px;
     font-family: "Open Sans", sans-serif;
     font-size: 13px;
     font-weight: 600;
     color: var(--kap-purple);
     background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23240F6E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
     outline: none;
     cursor: pointer;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    transition: border-color 0.15s;
+    transition: background-color 0.15s, box-shadow 0.15s;
   }
-  #tocSelect:focus {
-    border-color: var(--kap-purple);
+  #tocSelect:hover {
+    background-color: rgba(36,15,110,.06);
+  }
+  #tocSelect:focus-visible {
+    outline: 2px solid var(--kap-focus);
+    outline-offset: 2px;
   }
   @media (max-width: 600px) {
     #tocSelect {
-      max-width: 100px;
+      max-width: 110px;
     }
     #docTitle {
       max-width: 120px;
@@ -337,9 +348,17 @@
     background-color: var(--kap-purple) !important;
     color: #121212 !important;
   }
+  #app.dark-theme #tocSelect {
+    background-color: #1e1e1e !important;
+    color: var(--kap-purple) !important;
+    box-shadow: 0 0 0 1.5px var(--kap-purple) inset !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a5b4fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  }
+  #app.dark-theme #tocSelect:hover {
+    background-color: rgba(165, 180, 252, 0.12) !important;
+  }
   #app.dark-theme #search,
   #app.dark-theme #pageInput,
-  #app.dark-theme #tocSelect,
   #app.dark-theme .anno-popover textarea {
     background-color: #121212 !important;
     color: var(--kap-text) !important;
