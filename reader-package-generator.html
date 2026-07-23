@@ -58,7 +58,7 @@
 <div class="kap-topbar" aria-hidden="true"></div>
 <div class="wrap">
   <h1>Reader package generator</h1>
-  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader you can embed in your LMS via an iframe. The reader supports full-document search, zoom, annotations, and page navigation.</p>
+  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader you can embed in your LMS via an iframe. The reader supports full-document search, zoom, annotations, auto-resume, and page navigation.</p>
 
   <div class="card">
     <div id="drop">
@@ -142,6 +142,10 @@
   #docTitle{font-weight:600;font-size:14px;letter-spacing:.1px;max-width:240px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   
+  /* Reading Progress Bar */
+  #progressBar { height: 3px; background: var(--kap-line); width: 100%; flex: 0 0 auto; position: relative; z-index: 12; overflow: hidden; }
+  #progressFill { height: 100%; background: var(--kap-purple); width: 0%; transition: width 0.3s ease; }
+
   /* Outline Selector dropdown styles (Recommendation 3: Premium Pill Styling) */
   #tocSelect {
     max-width: 190px;
@@ -230,14 +234,6 @@
     border-radius: 3px;
     cursor: pointer;
     pointer-events: auto !important;
-  }
-  .pdf-comment-highlight::before {
-    content: "💬 ";
-    font-size: 14px;
-    margin-right: 3px;
-    display: inline-block;
-    vertical-align: top;
-    line-height: 1;
   }
   
   /* EPUB Layout */
@@ -334,6 +330,9 @@
   #app.dark-theme .anno-filters {
     background-color: #1e1e1e !important;
     color: var(--kap-text) !important;
+  }
+  #app.dark-theme #progressFill {
+    background-color: #a5b4fc !important;
   }
   #app.dark-theme #searchResults,
   #app.dark-theme #annotationDrawer {
@@ -475,6 +474,7 @@
       <button class="rbtn icon" id="mobileMenuBtn" title="Toggle More Controls">⚙️</button>
     </div>
   </div>
+  <div id="progressBar" title="Reading Progress"><div id="progressFill"></div></div>
   <div id="stage">
     <div id="viewerArea">
       <div id="pdfViewer" class="hidden"></div>
@@ -559,6 +559,49 @@ function startReader(){
   document.getElementById('docTitle').textContent = DOC.name || 'Document';
   document.title = DOC.name || 'Reader';
 
+  var posStorageKey = 'kaplan_reader_pos_' + (DOC.name || 'default').replace(/[^a-zA-Z0-9]/g, '_');
+  var progressFill = document.getElementById('progressFill');
+
+  function showResumeToast(message, onResume) {
+    var existing = document.getElementById('kaplan-resume-toast');
+    if (existing) existing.remove();
+
+    var toast = document.createElement('div');
+    toast.id = 'kaplan-resume-toast';
+    toast.style.cssText = 'position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:var(--kap-purple); color:#fff; padding:10px 18px; border-radius:999px; font-size:13px; font-weight:600; z-index:9999; box-shadow:0 4px 16px rgba(0,0,0,0.25); display:flex; align-items:center; gap:12px; transition:opacity 0.3s ease;';
+    
+    var textSpan = document.createElement('span');
+    textSpan.textContent = message;
+    toast.appendChild(textSpan);
+
+    var resumeBtn = document.createElement('button');
+    resumeBtn.textContent = 'Resume ➔';
+    resumeBtn.style.cssText = 'background:#fff; color:var(--kap-purple); border:none; padding:4px 12px; border-radius:999px; font-weight:700; font-size:12px; cursor:pointer;';
+    resumeBtn.onclick = function() {
+      onResume();
+      toast.style.opacity = '0';
+      setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 300);
+    };
+    toast.appendChild(resumeBtn);
+
+    var closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'background:transparent; color:rgba(255,255,255,0.75); border:none; font-size:14px; cursor:pointer; padding:0 4px; font-weight:bold;';
+    closeBtn.onclick = function() {
+      toast.style.opacity = '0';
+      setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 300);
+    };
+    toast.appendChild(closeBtn);
+
+    document.body.appendChild(toast);
+    setTimeout(function() {
+      if (toast.parentNode) {
+        toast.style.opacity = '0';
+        setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 300);
+      }
+    }, 8000);
+  }
+
   function esc(s){ return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function reEsc(s){ return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'); }
   function b64ToBytes(b64){ var bin=atob(b64),len=bin.length,a=new Uint8Array(len); for(var i=0;i<len;i++)a[i]=bin.charCodeAt(i); return a; }
@@ -610,7 +653,7 @@ function startReader(){
   else { fail('Unknown document type: ' + DOC.type); }
 
   /* ==========================================================================
-     PDF VIEWER
+     PDF VIEWER (WITH PROGRESS TRACKING & AUTO-RESUME)
      ========================================================================== */
   function initPDF(){
     var viewer = document.getElementById('pdfViewer');
@@ -636,7 +679,22 @@ function startReader(){
       render(1); render(2);
       AnnotationManager.init();
       loadPDFBookmarks();
+      checkPDFResume();
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
+
+    function checkPDFResume() {
+      try {
+        var saved = localStorage.getItem(posStorageKey);
+        if (saved) {
+          var pos = JSON.parse(saved);
+          if (pos && pos.page && pos.page > 1 && pos.page <= numPages) {
+            showResumeToast('Welcome back! Resume from Page ' + pos.page + '?', function() {
+              goToPage(pos.page);
+            });
+          }
+        }
+      } catch(e) {}
+    }
 
     var outlineRegistry = {};
     function resolveDest(dest) {
@@ -719,7 +777,20 @@ function startReader(){
       return ans;
     }
     var _raf=null;
-    function onScroll(){ if(_raf)return; _raf=requestAnimationFrame(function(){ _raf=null; el.pageInput.value = currentTopPage(); }); }
+    function onScroll(){ 
+      if(_raf)return; 
+      _raf=requestAnimationFrame(function(){ 
+        _raf=null; 
+        var cur = currentTopPage();
+        el.pageInput.value = cur; 
+        if (numPages > 0) {
+          progressFill.style.width = Math.round((cur / numPages) * 100) + '%';
+        }
+        try {
+          localStorage.setItem(posStorageKey, JSON.stringify({ page: cur }));
+        } catch(e) {}
+      }); 
+    }
 
     function render(n){
       if(n<1 || n>numPages || rendered[n]) return;
@@ -910,7 +981,7 @@ function startReader(){
   }
 
   /* ==========================================================================
-     EPUB VIEWER
+     EPUB VIEWER (WITH PROGRESS TRACKING & AUTO-RESUME)
      ========================================================================== */
   function initEPUB(){
     document.getElementById('epubViewer').classList.remove('hidden');
@@ -926,10 +997,29 @@ function startReader(){
 
     rendition.display().then(function(){
       hideStatus();
-      book.locations.generate(1000).then(function(){ locReady=true; updateLoc(); });
+      book.locations.generate(1000).then(function(){ 
+        locReady=true; 
+        updateLoc(); 
+        checkEPUBResume();
+      });
       AnnotationManager.init();
       loadEpubTOC();
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
+
+    function checkEPUBResume() {
+      try {
+        var saved = localStorage.getItem(posStorageKey);
+        if (saved) {
+          var pos = JSON.parse(saved);
+          if (pos && pos.cfi) {
+            showResumeToast('Welcome back! Resume from where you left off?', function() {
+              var targetCfi = getPointCfi(pos.cfi);
+              rendition.display(targetCfi);
+            });
+          }
+        }
+      } catch(e) {}
+    }
 
     function loadEpubTOC() {
       book.loaded.navigation.then(function(nav) {
@@ -985,11 +1075,18 @@ function startReader(){
           if (displayed && typeof displayed.page === 'number' && typeof displayed.total === 'number') {
             el.pageInput.value = displayed.page;
             el.pageCount.textContent = displayed.total + ' (Ch. ' + (loc.start.index + 1) + ')';
+            progressFill.style.width = Math.round((displayed.page / displayed.total) * 100) + '%';
           } else {
             var locIndex = book.locations.locationFromCfi(loc.start.cfi) + 1;
             el.pageInput.value = locIndex;
             el.pageCount.textContent = book.locations.length();
+            if (book.locations.length() > 0) {
+              progressFill.style.width = Math.round((locIndex / book.locations.length()) * 100) + '%';
+            }
           }
+          try {
+            localStorage.setItem(posStorageKey, JSON.stringify({ cfi: loc.start.cfi }));
+          } catch(e) {}
         } 
       } catch(e){} 
     }
@@ -1097,40 +1194,6 @@ function startReader(){
   /* ==========================================================================
      HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
      ========================================================================== */
-  function attachEpubCommentIcons() {
-    if (DOC.type !== 'epub' || !rendition) return;
-    try {
-      var views = rendition.manager.views._views;
-      if (!views || !views.length || !views[0].contents) return;
-      var doc = views[0].contents.document;
-      if (!doc) return;
-
-      var commentGroups = doc.querySelectorAll('g.epub-comment, .epub-comment');
-      commentGroups.forEach(function(g) {
-        if (g.querySelector('.epub-comment-icon-svg')) return;
-        var rect = g.querySelector('rect');
-        if (!rect) return;
-
-        var rx = parseFloat(rect.getAttribute('x') || 0);
-        var ry = parseFloat(rect.getAttribute('y') || 0);
-        var rh = parseFloat(rect.getAttribute('height') || 16);
-
-        var iconX = rx > 20 ? (rx - 18) : (rx + 2);
-        var iconY = ry + rh - 3;
-
-        var textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-        textEl.setAttribute('class', 'epub-comment-icon-svg');
-        textEl.setAttribute('x', iconX);
-        textEl.setAttribute('y', iconY);
-        textEl.setAttribute('font-size', '14');
-        textEl.setAttribute('style', 'cursor:pointer; pointer-events:auto; user-select:none;');
-        textEl.textContent = '💬';
-
-        g.appendChild(textEl);
-      });
-    } catch(e) {}
-  }
-
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -1355,15 +1418,13 @@ function startReader(){
 
         rendition.on('rendered', function() {
           self.renderAllEPUBAnnotations();
-          attachEpubCommentIcons();
-          setTimeout(attachEpubCommentIcons, 100);
 
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
             var contents = contentsList[0];
             if (contents && contents.document) {
               contents.document.addEventListener('click', function(e) {
-                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight, .epub-comment-icon-svg');
+                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight');
                 var matchedAnno = null;
                 
                 if (mark) {
@@ -1730,13 +1791,8 @@ function startReader(){
       } else if (anno.docType === 'epub') {
         if (!anno.cfiRange) return;
         var targetCfi = getPointCfi(anno.cfiRange);
-        rendition.display(targetCfi).then(function() {
-          attachEpubCommentIcons();
-          setTimeout(attachEpubCommentIcons, 100);
-        }).catch(function() {
-          rendition.display(anno.cfiRange).then(function() {
-            attachEpubCommentIcons();
-          });
+        rendition.display(targetCfi).catch(function() {
+          rendition.display(anno.cfiRange);
         });
       }
     },
@@ -1808,8 +1864,6 @@ function startReader(){
       } catch(e) {}
       
       rendition.annotations.add('highlight', anno.cfiRange, {}, null, cssClass, styles);
-      attachEpubCommentIcons();
-      setTimeout(attachEpubCommentIcons, 50);
     },
 
     renderAllEPUBAnnotations: function() {
@@ -1819,8 +1873,6 @@ function startReader(){
           self.renderEPUBAnnotation(anno);
         }
       });
-      attachEpubCommentIcons();
-      setTimeout(attachEpubCommentIcons, 100);
     },
     
     showViewCommentPopover: function(rect, anno) {
@@ -1996,8 +2048,7 @@ function startReader(){
         '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
         '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.35 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
         '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(237, 233, 254, 0.45) !important; border-bottom: 2px solid #8b5cf6 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
-        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.4 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
-        '.epub-comment::before, [class*="epub-comment"]::before { content: "💬 " !important; font-size: 14px !important; margin-right: 3px !important; display: inline-block !important; vertical-align: top !important; line-height: 1 !important; }'
+        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.4 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }'
       );
 
       if (mode === 'dark') {
@@ -2234,6 +2285,7 @@ function startReader(){
       '  - Search across the whole document with a results list',
       '  - Zoom in / out',
       '  - Page / position navigation',
+      '  - Reading Progress Bar & Auto-Resume reading position prompt',
       '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
       '  - Accessible WCAG AAA Dark Mode theme toggler',
