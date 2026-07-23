@@ -467,6 +467,10 @@
       <button class="rbtn icon" id="addCommentBtn" title="Add Comment" disabled>💬</button>
       <button class="rbtn icon" id="toggleAnnotationsBtn" title="Annotations Drawer">📋</button>
     </div>
+    <div class="group" id="ttsGroup">
+      <button class="rbtn icon" id="ttsPlayBtn" title="Read Aloud (Text-to-Speech)">🔊</button>
+      <button class="rbtn icon hidden" id="ttsStopBtn" title="Stop Reading">⏹️</button>
+    </div>
     <div class="group" id="themeGroup">
       <button class="rbtn icon" id="themeToggleBtn" title="Toggle Accessible Dark Mode">☀️</button>
     </div>
@@ -2136,6 +2140,115 @@ function startReader(){
       });
     }
   }
+
+  /* ==========================================================================
+     TEXT-TO-SPEECH AUDIO ENGINE (WCAG ACCESSIBILITY)
+     ========================================================================== */
+  function initializeTTS() {
+    var ttsPlayBtn = document.getElementById('ttsPlayBtn');
+    var ttsStopBtn = document.getElementById('ttsStopBtn');
+
+    if (!('speechSynthesis' in window)) {
+      if (ttsPlayBtn) ttsPlayBtn.style.display = 'none';
+      if (ttsStopBtn) ttsStopBtn.style.display = 'none';
+      return;
+    }
+
+    var synth = window.speechSynthesis;
+    var currentUtterance = null;
+    var isReading = false;
+
+    function getActiveText() {
+      if (DOC.type === 'pdf') {
+        var curPage = currentTopPage();
+        if (pageData[curPage] && pageData[curPage].rawText) {
+          return pageData[curPage].rawText.trim();
+        }
+        var activeSlot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
+        return activeSlot ? activeSlot.innerText.trim() : '';
+      } else if (DOC.type === 'epub') {
+        try {
+          var view = rendition.manager.views._views[0];
+          if (view && view.contents && view.contents.document) {
+            return view.contents.document.body.innerText.trim();
+          }
+        } catch(e) {}
+      }
+      return '';
+    }
+
+    function stopTTS() {
+      if (synth.speaking || synth.pending) {
+        synth.cancel();
+      }
+      isReading = false;
+      if (ttsPlayBtn) {
+        ttsPlayBtn.textContent = '🔊';
+        ttsPlayBtn.classList.remove('active');
+        ttsPlayBtn.title = 'Read Aloud (Text-to-Speech)';
+      }
+      if (ttsStopBtn) {
+        ttsStopBtn.classList.add('hidden');
+      }
+    }
+
+    function playTTS() {
+      if (synth.paused && isReading) {
+        synth.resume();
+        ttsPlayBtn.textContent = '⏸️';
+        ttsPlayBtn.title = 'Pause Reading';
+        return;
+      }
+
+      if (synth.speaking && !synth.paused) {
+        synth.pause();
+        ttsPlayBtn.textContent = '🔊';
+        ttsPlayBtn.title = 'Resume Reading';
+        return;
+      }
+
+      stopTTS();
+
+      var textToRead = getActiveText();
+      if (!textToRead) {
+        showToast('No readable text found on this page.');
+        return;
+      }
+
+      currentUtterance = new SpeechSynthesisUtterance(textToRead);
+      currentUtterance.rate = 1.0;
+      currentUtterance.pitch = 1.0;
+
+      currentUtterance.onstart = function() {
+        isReading = true;
+        ttsPlayBtn.textContent = '⏸️';
+        ttsPlayBtn.classList.add('active');
+        ttsPlayBtn.title = 'Pause Reading';
+        if (ttsStopBtn) ttsStopBtn.classList.remove('hidden');
+      };
+
+      currentUtterance.onend = function() {
+        stopTTS();
+      };
+
+      currentUtterance.onerror = function() {
+        stopTTS();
+      };
+
+      synth.speak(currentUtterance);
+    }
+
+    if (ttsPlayBtn) ttsPlayBtn.onclick = playTTS;
+    if (ttsStopBtn) ttsStopBtn.onclick = stopTTS;
+
+    // Stop speaking when user navigates to a new page or chapter
+    el.prev.addEventListener('click', stopTTS);
+    el.next.addEventListener('click', stopTTS);
+    if (el.tocSelect) el.tocSelect.addEventListener('change', stopTTS);
+    window.addEventListener('beforeunload', stopTTS);
+  }
+
+  initializeTTS();
 }
 </script>
 </body>
