@@ -234,7 +234,7 @@
   .pdf-comment-highlight::before {
     content: "💬 ";
     font-size: 14px;
-    margin-right: 2px;
+    margin-right: 3px;
     display: inline-block;
     vertical-align: top;
     line-height: 1;
@@ -1097,6 +1097,40 @@ function startReader(){
   /* ==========================================================================
      HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
      ========================================================================== */
+  function attachEpubCommentIcons() {
+    if (DOC.type !== 'epub' || !rendition) return;
+    try {
+      var views = rendition.manager.views._views;
+      if (!views || !views.length || !views[0].contents) return;
+      var doc = views[0].contents.document;
+      if (!doc) return;
+
+      var commentGroups = doc.querySelectorAll('g.epub-comment, .epub-comment');
+      commentGroups.forEach(function(g) {
+        if (g.querySelector('.epub-comment-icon-svg')) return;
+        var rect = g.querySelector('rect');
+        if (!rect) return;
+
+        var rx = parseFloat(rect.getAttribute('x') || 0);
+        var ry = parseFloat(rect.getAttribute('y') || 0);
+        var rh = parseFloat(rect.getAttribute('height') || 16);
+
+        var iconX = rx > 20 ? (rx - 18) : (rx + 2);
+        var iconY = ry + rh - 3;
+
+        var textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('class', 'epub-comment-icon-svg');
+        textEl.setAttribute('x', iconX);
+        textEl.setAttribute('y', iconY);
+        textEl.setAttribute('font-size', '14');
+        textEl.setAttribute('style', 'cursor:pointer; pointer-events:auto; user-select:none;');
+        textEl.textContent = '💬';
+
+        g.appendChild(textEl);
+      });
+    } catch(e) {}
+  }
+
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -1321,12 +1355,15 @@ function startReader(){
 
         rendition.on('rendered', function() {
           self.renderAllEPUBAnnotations();
+          attachEpubCommentIcons();
+          setTimeout(attachEpubCommentIcons, 100);
+
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
             var contents = contentsList[0];
             if (contents && contents.document) {
               contents.document.addEventListener('click', function(e) {
-                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight');
+                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight, .epub-comment-icon-svg');
                 var matchedAnno = null;
                 
                 if (mark) {
@@ -1693,8 +1730,13 @@ function startReader(){
       } else if (anno.docType === 'epub') {
         if (!anno.cfiRange) return;
         var targetCfi = getPointCfi(anno.cfiRange);
-        rendition.display(targetCfi).catch(function() {
-          rendition.display(anno.cfiRange);
+        rendition.display(targetCfi).then(function() {
+          attachEpubCommentIcons();
+          setTimeout(attachEpubCommentIcons, 100);
+        }).catch(function() {
+          rendition.display(anno.cfiRange).then(function() {
+            attachEpubCommentIcons();
+          });
         });
       }
     },
@@ -1766,6 +1808,8 @@ function startReader(){
       } catch(e) {}
       
       rendition.annotations.add('highlight', anno.cfiRange, {}, null, cssClass, styles);
+      attachEpubCommentIcons();
+      setTimeout(attachEpubCommentIcons, 50);
     },
 
     renderAllEPUBAnnotations: function() {
@@ -1775,6 +1819,8 @@ function startReader(){
           self.renderEPUBAnnotation(anno);
         }
       });
+      attachEpubCommentIcons();
+      setTimeout(attachEpubCommentIcons, 100);
     },
     
     showViewCommentPopover: function(rect, anno) {
