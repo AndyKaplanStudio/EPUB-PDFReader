@@ -2170,31 +2170,40 @@ function startReader(){
     }
 
     var synth = window.speechSynthesis;
-    var currentUtterance = null;
     var isReading = false;
     var isPaused = false;
-    var activeSpansMap = [];
-    var activeEpubNodesMap = [];
+    var speechBlocks = [];
+    var currentBlockIndex = 0;
+    var timerInterval = null;
+
+    // Retain global reference to prevent V8 garbage collection mid-speech
+    window.__currentUtterance__ = null;
 
     function clearTTSHighlights() {
       document.querySelectorAll('.tts-active').forEach(function(el){ el.classList.remove('tts-active'); });
       try {
         if (DOC.type === 'epub' && rendition) {
-          var views = rendition.manager.views._views;
-          if (views && views[0] && views[0].contents) {
-            var doc = views[0].contents.document;
-            doc.querySelectorAll('.tts-active-element').forEach(function(el){ el.classList.remove('tts-active-element'); });
+          var contentsList = rendition.getContents();
+          if (contentsList && contentsList.length > 0) {
+            contentsList.forEach(function(cnt) {
+              if (cnt && cnt.document) {
+                cnt.document.querySelectorAll('.tts-active-element').forEach(function(el){ el.classList.remove('tts-active-element'); });
+              }
+            });
           }
         }
       } catch(e){}
     }
 
     function stopTTS() {
-      if (synth.speaking || synth.pending || synth.paused) {
-        synth.cancel();
-      }
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = null;
       isReading = false;
       isPaused = false;
+      currentBlockIndex = 0;
+      speechBlocks = [];
+      try { synth.cancel(); } catch(e){}
+      window.__currentUtterance__ = null;
       clearTTSHighlights();
       if (ttsPlayBtn) {
         ttsPlayBtn.textContent = '🔊';
@@ -2206,16 +2215,105 @@ function startReader(){
       }
     }
 
+    function highlightBlock(block) {
+      clearTTSHighlights();
+      if (!block || !block.el) return;
+      if (DOC.type === 'pdf') {
+        block.el.classList.add('tts-active');
+        try { block.el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+      } else if (DOC.type === 'epub') {
+        block.el.classList.add('tts-active-element');
+        try { block.el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+      }
+    }
+
+    function playBlock(index) {
+      if (!isReading || index < 0 || index >= speechBlocks.length) {
+        stopTTS();
+        return;
+      }
+
+      currentBlockIndex = index;
+      var block = speechBlocks[index];
+      highlightBlock(block);
+
+      var utt = new SpeechSynthesisUtterance(block.text);
+      utt.rate = 1.0;
+      utt.pitch = 1.0;
+      window.__currentUtterance__ = utt;
+
+      utt.onstart = function() {
+        if (!isReading) return;
+        ttsPlayBtn.textContent = '⏸️';
+        ttsPlayBtn.classList.add('active');
+        ttsPlayBtn.title = 'Pause Reading';
+        if (ttsStopBtn) ttsStopBtn.classList.remove('hidden');
+      };
+
+      utt.onend = function() {
+        if (isReading && !isPaused) {
+          playBlock(currentBlockIndex + 1);
+        }
+      };
+
+      utt.onerror = function() {
+        if (isReading && !isPaused) {
+          playBlock(currentBlockIndex + 1);
+        }
+      };
+
+      try { synth.resume(); } catch(e){}
+      synth.speak(utt);
+    }
+
+    function extractSpeechBlocks() {
+      var blocks = [];
+      if (DOC.type === 'pdf') {
+        var curPage = currentTopPage();
+        var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
+        if (slot) {
+          var spans = slot.querySelectorAll('span');
+          spans.forEach(function(span) {
+            var txt = (span.textContent || '').trim();
+            if (txt.length > 0) {
+              blocks.push({ el: span, text: txt });
+            }
+          });
+        }
+      } else if (DOC.type === 'epub') {
+        try {
+          var contentsList = rendition.getContents();
+          if (contentsList && contentsList.length > 0) {
+            var doc = contentsList[0].document;
+            var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd');
+            if (!elems || elems.length === 0) {
+              elems = doc.querySelectorAll('div, section, body');
+            }
+            elems.forEach(function(el) {
+              var hasBlockChild = el.querySelector('p, h1, h2, h3, h4, h5, h6, li, blockquote');
+              if (!hasBlockChild) {
+                var txt = (el.innerText || el.textContent || '').trim();
+                if (txt.length > 0) {
+                  blocks.push({ el: el, text: txt });
+                }
+              }
+            });
+          }
+        } catch(e) {}
+      }
+      return blocks;
+    }
+
     function playTTS() {
       if (isReading) {
         if (isPaused) {
-          synth.resume();
+          try { synth.resume(); } catch(e){}
           isPaused = false;
           ttsPlayBtn.textContent = '⏸️';
           ttsPlayBtn.title = 'Pause Reading';
           return;
         } else {
-          synth.pause();
+          try { synth.pause(); } catch(e){}
           isPaused = true;
           ttsPlayBtn.textContent = '🔊';
           ttsPlayBtn.title = 'Resume Reading';
@@ -2223,105 +2321,27 @@ function startReader(){
         }
       }
 
-      stopTTS();
+      try { synth.cancel(); } catch(e){}
+      speechBlocks = extractSpeechBlocks();
 
-      var textToRead = '';
-      activeSpansMap = [];
-      activeEpubNodesMap = [];
-
-      if (DOC.type === 'pdf') {
-        var curPage = currentTopPage();
-        var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
-        if (slot) {
-          var spans = slot.querySelectorAll('span');
-          var charCount = 0;
-          spans.forEach(function(span) {
-            var txt = span.textContent;
-            if (txt) {
-              activeSpansMap.push({
-                el: span,
-                start: charCount,
-                end: charCount + txt.length
-              });
-              textToRead += txt + ' ';
-              charCount += txt.length + 1;
-            }
-          });
-        }
-      } else if (DOC.type === 'epub') {
-        try {
-          var view = rendition.manager.views._views[0];
-          if (view && view.contents && view.contents.document) {
-            var doc = view.contents.document;
-            var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, div');
-            var charCount = 0;
-            elems.forEach(function(el) {
-              if (el.children.length === 0 || (el.tagName !== 'DIV' && el.querySelector('p, div, h1, h2, h3') === null)) {
-                var txt = el.innerText.trim();
-                if (txt.length > 0) {
-                  activeEpubNodesMap.push({
-                    el: el,
-                    start: charCount,
-                    end: charCount + txt.length
-                  });
-                  textToRead += txt + ' ';
-                  charCount += txt.length + 1;
-                }
-              }
-            });
-            if (!textToRead) {
-              textToRead = doc.body.innerText.trim();
-            }
-          }
-        } catch(e) {}
-      }
-
-      if (!textToRead) {
+      if (speechBlocks.length === 0) {
         showToast('No readable text found on this page.');
         return;
       }
 
-      currentUtterance = new SpeechSynthesisUtterance(textToRead);
-      currentUtterance.rate = 1.0;
-      currentUtterance.pitch = 1.0;
+      isReading = true;
+      isPaused = false;
 
-      currentUtterance.onstart = function() {
-        isReading = true;
-        isPaused = false;
-        ttsPlayBtn.textContent = '⏸️';
-        ttsPlayBtn.classList.add('active');
-        ttsPlayBtn.title = 'Pause Reading';
-        if (ttsStopBtn) ttsStopBtn.classList.remove('hidden');
-      };
-
-      currentUtterance.onboundary = function(e) {
-        var charIdx = e.charIndex;
-        if (DOC.type === 'pdf') {
-          var match = activeSpansMap.find(function(m) { return charIdx >= m.start && charIdx <= m.end; });
-          if (match) {
-            clearTTSHighlights();
-            match.el.classList.add('tts-active');
-            match.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        } else if (DOC.type === 'epub') {
-          var match = activeEpubNodesMap.find(function(m) { return charIdx >= m.start && charIdx <= m.end; });
-          if (match) {
-            clearTTSHighlights();
-            match.el.classList.add('tts-active-element');
-            match.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
+      // Chrome keep-alive pulse to prevent V8 speech engine freezes
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(function() {
+        if (isReading && !isPaused && synth.speaking) {
+          synth.pause();
+          synth.resume();
         }
-      };
+      }, 10000);
 
-      currentUtterance.onend = function() {
-        stopTTS();
-      };
-
-      currentUtterance.onerror = function() {
-        stopTTS();
-      };
-
-      synth.speak(currentUtterance);
+      playBlock(0);
     }
 
     if (ttsPlayBtn) ttsPlayBtn.onclick = playTTS;
