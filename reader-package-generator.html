@@ -668,6 +668,12 @@ function startReader(){
     var visible = {};
     var lowIdx = null, indexing = null;
     var query = '', results = [], current = -1, shouldScrollToActiveSearch = false;
+    var canSavePos = false;
+    var savedPos = null;
+    try {
+      var saved = localStorage.getItem(posStorageKey);
+      if (saved) savedPos = JSON.parse(saved);
+    } catch(e) {}
 
     var pdfSource = DOC.base64 ? { data: b64ToBytes(DOC.base64) } : { url: DOC.src };
     pdfjsLib.getDocument(pdfSource).promise.then(function(doc){
@@ -683,17 +689,12 @@ function startReader(){
     }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
     function checkPDFResume() {
-      try {
-        var saved = localStorage.getItem(posStorageKey);
-        if (saved) {
-          var pos = JSON.parse(saved);
-          if (pos && pos.page && pos.page > 1 && pos.page <= numPages) {
-            showResumeToast('Welcome back! Resume from Page ' + pos.page + '?', function() {
-              goToPage(pos.page);
-            });
-          }
-        }
-      } catch(e) {}
+      if (savedPos && savedPos.page && savedPos.page > 1 && savedPos.page <= numPages) {
+        showResumeToast('Welcome back! Resume from Page ' + savedPos.page + '?', function() {
+          goToPage(savedPos.page);
+        });
+      }
+      canSavePos = true;
     }
 
     var outlineRegistry = {};
@@ -786,9 +787,11 @@ function startReader(){
         if (numPages > 0) {
           progressFill.style.width = Math.round((cur / numPages) * 100) + '%';
         }
-        try {
-          localStorage.setItem(posStorageKey, JSON.stringify({ page: cur }));
-        } catch(e) {}
+        if (canSavePos) {
+          try {
+            localStorage.setItem(posStorageKey, JSON.stringify({ page: cur }));
+          } catch(e) {}
+        }
       }); 
     }
 
@@ -992,33 +995,38 @@ function startReader(){
     rendition = book.renderTo('epubArea', { width:'100%', height:'100%', flow:'paginated', spread:'auto', allowScriptedContent:true });
     var results=[], current=-1, locReady=false;
     var activeSearchHighlightCfi = null;
+    var canSavePos = false;
+    var savedPos = null;
+    try {
+      var saved = localStorage.getItem(posStorageKey);
+      if (saved) savedPos = JSON.parse(saved);
+    } catch(e) {}
 
     el.pageInput.value=1; el.pageCount.textContent='…';
 
     rendition.display().then(function(){
       hideStatus();
+      AnnotationManager.init();
+      loadEpubTOC();
+      checkEPUBResume();
       book.locations.generate(1000).then(function(){ 
         locReady=true; 
         updateLoc(); 
-        checkEPUBResume();
-      });
-      AnnotationManager.init();
-      loadEpubTOC();
+      }).catch(function(){ locReady=true; });
     }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
 
     function checkEPUBResume() {
-      try {
-        var saved = localStorage.getItem(posStorageKey);
-        if (saved) {
-          var pos = JSON.parse(saved);
-          if (pos && pos.cfi) {
-            showResumeToast('Welcome back! Resume from where you left off?', function() {
-              var targetCfi = getPointCfi(pos.cfi);
-              rendition.display(targetCfi);
-            });
-          }
+      if (savedPos && savedPos.cfi) {
+        var curLoc = rendition.currentLocation();
+        var curCfi = (curLoc && curLoc.start) ? curLoc.start.cfi : null;
+        if (!curCfi || getPointCfi(savedPos.cfi) !== getPointCfi(curCfi)) {
+          showResumeToast('Welcome back! Resume from where you left off?', function() {
+            var targetCfi = getPointCfi(savedPos.cfi);
+            rendition.display(targetCfi);
+          });
         }
-      } catch(e) {}
+      }
+      canSavePos = true;
     }
 
     function loadEpubTOC() {
@@ -1084,9 +1092,11 @@ function startReader(){
               progressFill.style.width = Math.round((locIndex / book.locations.length()) * 100) + '%';
             }
           }
-          try {
-            localStorage.setItem(posStorageKey, JSON.stringify({ cfi: loc.start.cfi }));
-          } catch(e) {}
+          if (canSavePos) {
+            try {
+              localStorage.setItem(posStorageKey, JSON.stringify({ cfi: loc.start.cfi }));
+            } catch(e) {}
+          }
         } 
       } catch(e){} 
     }
