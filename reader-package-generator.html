@@ -200,9 +200,9 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation In-text Highlighting Styles (Refined Pastel Tints) */
+  /* Annotation In-text Highlighting Styles */
   .pdf-highlight {
-    background-color: rgba(254, 240, 138, 0.45) !important;
+    background-color: rgba(254, 240, 138, 0.55) !important;
     border-bottom: 2px solid #eab308;
     border-radius: 3px;
     cursor: pointer;
@@ -919,8 +919,8 @@ function startReader(){
     rendition.themes.default({
       '::selection': { 'background':'rgba(36,15,110,.22)' },
       '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' },
-      '.epub-highlight': { "background-color": "rgba(254, 240, 138, 0.45) !important", "border-bottom": "2px solid #eab308", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" },
-      '.epub-comment': { "background-color": "rgba(237, 233, 254, 0.85) !important", "border-bottom": "2px solid #8b5cf6", "border-radius": "3px", "cursor": "pointer !important", "pointer-events": "auto !important" }
+      '.epub-highlight': { 'fill': '#fef08a !important', 'fill-opacity': '0.55 !important', 'background-color': 'rgba(254, 240, 138, 0.55) !important', 'border-bottom': '2px solid #eab308 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important' },
+      '.epub-comment': { 'fill': '#ede9fe !important', 'fill-opacity': '0.85 !important', 'background-color': 'rgba(237, 233, 254, 0.85) !important', 'border-bottom': '2px solid #8b5cf6 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important' }
     });
 
     rendition.themes.register('dark', {
@@ -1282,7 +1282,7 @@ function startReader(){
             var contents = contentsList[0];
             if (contents && contents.document) {
               contents.document.addEventListener('click', function(e) {
-                var mark = e.target.closest('.epub-comment, .epub-highlight, .epub-comment-badge');
+                var mark = e.target.closest('.epub-comment, .epub-highlight, .epub-comment-badge, g.epub-comment, g.epub-highlight');
                 var matchedAnno = null;
                 
                 if (mark) {
@@ -1452,7 +1452,8 @@ function startReader(){
       var list = document.getElementById('annoList');
       var filtered = this.annotations.filter(function(a) {
         if (self.currentFilter === 'all') return true;
-        return a.type === self.currentFilter;
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
+        return self.currentFilter === 'comment' ? isComment : !isComment;
       });
       
       if (filtered.length === 0) {
@@ -1461,8 +1462,9 @@ function startReader(){
       }
       
       list.innerHTML = filtered.map(function(a) {
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
         var dateStr = new Date(a.created).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-        var indicator = a.type === 'highlight' ? '🖊️ Highlight' : '💬 Comment';
+        var indicator = isComment ? '💬 Comment' : '🖊️ Highlight';
         var commentHtml = a.comment ? '<div style="background:var(--kap-col-bg); padding:6px 8px; border-radius:6px; margin-top:6px; font-style:italic; border-left:3px solid var(--kap-purple); color:var(--kap-text)">'+esc(a.comment)+'</div>' : '';
         var location = a.docType === 'pdf' ? 'Page '+a.page : 'EPUB Location';
         
@@ -1475,7 +1477,7 @@ function startReader(){
                    '<span>'+location+'</span>' +
                    '<span style="font-size:10px; color:var(--kap-muted); margin-right:12px;">'+dateStr+'</span>' +
                  '</div>' +
-                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(a.type==='highlight'?'#b45309':'#7c3aed')+'">'+indicator+'</div>' +
+                 '<div style="font-weight:600; font-size:11px; margin-bottom:4px; color:'+(isComment?'#7c3aed':'#b45309')+'">'+indicator+'</div>' +
                  '<div style="color:var(--kap-text); font-size:12.5px; line-height:1.4;">"'+esc(a.text)+'"</div>' +
                  commentHtml +
                '</div>';
@@ -1504,8 +1506,9 @@ function startReader(){
       var anno = this.annotations.find(function(a) { return a.id == id; });
       if (!anno) return;
       
+      var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
       var locStr = anno.docType === 'pdf' ? 'Page ' + anno.page : 'EPUB Location';
-      var text = '[' + locStr + '] ' + (anno.type === 'highlight' ? 'Highlight' : 'Comment') + '\n' +
+      var text = '[' + locStr + '] ' + (isComment ? 'Comment' : 'Highlight') + '\n' +
                  'Quote: "' + anno.text + '"\n';
       if (anno.comment) {
         text += 'Note: ' + anno.comment + '\n';
@@ -1522,7 +1525,8 @@ function startReader(){
       var self = this;
       var filtered = this.annotations.filter(function(a) {
         if (self.currentFilter === 'all') return true;
-        return a.type === self.currentFilter;
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
+        return self.currentFilter === 'comment' ? isComment : !isComment;
       });
 
       if (filtered.length === 0) {
@@ -1535,8 +1539,9 @@ function startReader(){
       content += '========================================\n\n';
 
       filtered.forEach(function(a, idx) {
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
         var locStr = a.docType === 'pdf' ? 'Page ' + a.page : 'EPUB Location';
-        content += (idx + 1) + '. [' + locStr + '] ' + (a.type === 'highlight' ? 'Highlight' : 'Comment') + '\n';
+        content += (idx + 1) + '. [' + locStr + '] ' + (isComment ? 'Comment' : 'Highlight') + '\n';
         content += 'Quote: "' + a.text + '"\n';
         if (a.comment) {
           content += 'Note: ' + a.comment + '\n';
@@ -1555,7 +1560,8 @@ function startReader(){
       var self = this;
       var filtered = this.annotations.filter(function(a) {
         if (self.currentFilter === 'all') return true;
-        return a.type === self.currentFilter;
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
+        return self.currentFilter === 'comment' ? isComment : !isComment;
       });
 
       if (filtered.length === 0) {
@@ -1568,9 +1574,10 @@ function startReader(){
       content += '==================================================\n\n';
 
       filtered.forEach(function(a, idx) {
+        var isComment = (a.type === 'comment' || (a.comment && a.comment.trim() !== ''));
         var locStr = a.docType === 'pdf' ? 'Page ' + a.page : 'EPUB Location';
         content += 'Annotation #' + (idx + 1) + ' [' + locStr + ']\n';
-        content += 'Type: ' + (a.type === 'highlight' ? 'Highlight Selection' : 'Personal Note/Comment') + '\n';
+        content += 'Type: ' + (isComment ? 'Personal Note/Comment' : 'Highlight Selection') + '\n';
         content += 'Date: ' + new Date(a.created).toLocaleString() + '\n';
         content += 'Quote: "' + a.text + '"\n';
         if (a.comment) {
@@ -1615,7 +1622,6 @@ function startReader(){
           this.renderPageAnnotations(anno.page);
         } else if (anno.docType === 'epub') {
           try {
-            // Force removal of both types to catch any old lingering annotations
             rendition.annotations.remove(anno.cfiRange, 'highlight');
             rendition.annotations.remove(anno.cfiRange, 'underline');
           } catch(e) {}
@@ -1664,7 +1670,8 @@ function startReader(){
       var self = this;
       this.annotations.forEach(function(anno) {
         if (anno.docType === 'pdf' && anno.page === pageNum) {
-          var className = anno.type === 'highlight' ? 'pdf-highlight' : 'pdf-comment-highlight';
+          var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
+          var className = isComment ? 'pdf-comment-highlight' : 'pdf-highlight';
           
           pd.ranges.forEach(function(it) {
             var div = pd.textDivs[it.div];
@@ -1685,7 +1692,7 @@ function startReader(){
               div.innerHTML = '';
               if (before) div.appendChild(document.createTextNode(before));
 
-              if (anno.type === 'comment' && overlapStart === anno.startOffset) {
+              if (isComment && overlapStart === anno.startOffset) {
                 var badge = document.createElement('span');
                 badge.className = 'pdf-comment-badge';
                 badge.dataset.annoId = anno.id;
@@ -1709,17 +1716,18 @@ function startReader(){
     renderEPUBAnnotation: function(anno) {
       if (anno.docType !== 'epub') return;
       
-      // We force EPUB.js to use the HTML-based "highlight" engine for both types, 
-      // otherwise it uses an SVG path for "underline" that ignores CSS background colors.
-      var kind = 'highlight'; 
-      var cssClass = anno.type === 'highlight' ? 'epub-highlight' : 'epub-comment';
+      var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
+      var cssClass = isComment ? 'epub-comment' : 'epub-highlight';
+      var styles = isComment 
+        ? { fill: '#ede9fe', 'fill-opacity': '0.85', stroke: '#8b5cf6', 'stroke-width': '1px' }
+        : { fill: '#fef08a', 'fill-opacity': '0.55', stroke: '#eab308', 'stroke-width': '1px' };
       
       try {
         rendition.annotations.remove(anno.cfiRange, 'highlight');
         rendition.annotations.remove(anno.cfiRange, 'underline');
       } catch(e) {}
       
-      rendition.annotations.add(kind, anno.cfiRange, {}, null, cssClass);
+      rendition.annotations.add('highlight', anno.cfiRange, {}, null, cssClass, styles);
       this.renderEPUBBadges();
     },
     
@@ -1739,7 +1747,8 @@ function startReader(){
         }
         
         self.annotations.forEach(function(anno) {
-          if (anno.docType === 'epub' && anno.type === 'comment' && anno.cfiRange) {
+          var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
+          if (anno.docType === 'epub' && isComment && anno.cfiRange) {
             try {
               var range = contents.range(anno.cfiRange);
               if (range) {
@@ -1958,10 +1967,16 @@ function startReader(){
       var cssRules = [];
       
       cssRules.push(
-        'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; }'
-      );
-      cssRules.push(
+        'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; }',
         'span, b, i, strong, em, code, small, sub, sup, a { font-size: inherit !important; line-height: inherit !important; }'
+      );
+
+      // Base annotation styles (Light Mode Defaults)
+      cssRules.push(
+        '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; }',
+        '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.65 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; }',
+        '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(237, 233, 254, 0.85) !important; border-bottom: 2px solid #8b5cf6 !important; cursor: pointer !important; pointer-events: auto !important; }',
+        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.85 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; }'
       );
 
       if (mode === 'dark') {
@@ -1974,20 +1989,12 @@ function startReader(){
           '[style*="color"][style*="blue"] *, [style*="color"][style*="navy"] *, [style*="color"][style*="#000080"] *, [style*="color"][style*="#0000FF"] *, [style*="color"][style*="#0000ff"] *, [style*="color"][style*="#00F"] *, [style*="color"][style*="#00f"] *, [style*="color"][style*="rgb(0, 0, 128)"] *, [style*="color"][style*="rgb(0,0,128)"] *, [style*="color"][style*="rgb(0, 255)"] *, [style*="color"][style*="rgb(0,0,255)"] * { color: #ffffff !important; }',
           '[style*="color"][style*="#000000"], [style*="color"][style*="#000"], [style*="color"][style*="black"], [style*="color"][style*="rgb(0, 0, 0)"], [style*="color"][style*="rgb(0,0,0)"] { color: #e2e8f0 !important; }',
           '::selection { background: rgba(165, 180, 252, 0.3) !important; }',
-          '.epub-highlight { background-color: rgba(254, 240, 138, 0.3) !important; border-bottom: 2px solid #facc15; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
-          '.epub-comment { background-color: rgba(167, 139, 250, 0.35) !important; border-bottom: 2px solid #c084fc; border-radius: 3px; cursor: pointer !important; pointer-events: auto !important; }',
+          '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(250, 204, 21, 0.35) !important; border-bottom: 2px solid #facc15 !important; }',
+          '.epub-highlight rect, g.epub-highlight rect { fill: #facc15 !important; fill-opacity: 0.35 !important; stroke: #facc15 !important; }',
+          '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(192, 132, 252, 0.45) !important; border-bottom: 2px solid #c084fc !important; }',
+          '.epub-comment rect, g.epub-comment rect { fill: #c084fc !important; fill-opacity: 0.45 !important; stroke: #c084fc !important; }',
           '.epub-search-match { background-color: rgba(165, 180, 252, 0.45) !important; border-bottom: 2px solid #240F6E; }'
         );
-      } else {
-        styleEl.innerHTML = '';
-        var styleTags = doc.head.querySelectorAll('style');
-        styleTags.forEach(function(st) {
-          if (st.id !== 'epub-manual-theme-override') {
-            if (st.textContent.indexOf('#121212') !== -1) {
-              st.remove();
-            }
-          }
-        });
       }
 
       styleEl.innerHTML = cssRules.join('\n');
