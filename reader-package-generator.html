@@ -216,7 +216,7 @@
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation In-text Highlighting Styles */
+  /* Annotation Highlighting Styles */
   .pdf-highlight {
     background-color: rgba(254, 240, 138, 0.55) !important;
     border-bottom: 2px solid #eab308;
@@ -231,17 +231,13 @@
     cursor: pointer;
     pointer-events: auto !important;
   }
-
-  /* Inline Comment Badge for PDF & EPUB */
-  .pdf-comment-badge, .epub-comment-badge {
-    cursor: pointer !important;
-    font-size: 14px !important;
-    margin-right: 4px !important;
-    display: inline-block !important;
-    vertical-align: super !important;
-    line-height: 1 !important;
-    user-select: none !important;
-    pointer-events: auto !important;
+  .pdf-comment-highlight::before {
+    content: "💬 ";
+    font-size: 14px;
+    margin-right: 2px;
+    display: inline-block;
+    vertical-align: top;
+    line-height: 1;
   }
   
   /* EPUB Layout */
@@ -530,6 +526,28 @@
 })();
 </script>
 <script>
+function getPointCfi(cfi) {
+  if (!cfi || typeof cfi !== 'string') return cfi;
+  if (cfi.indexOf(',') === -1) return cfi;
+  
+  if (typeof ePub !== 'undefined' && ePub.CFI) {
+    try {
+      var cfiObj = new ePub.CFI(cfi);
+      cfiObj.collapse(true);
+      return cfiObj.toString();
+    } catch(e) {}
+  }
+  
+  try {
+    var match = cfi.match(/^epubcfi\(([^,]+),([^,]+),([^)]+)\)$/);
+    if (match) {
+      return 'epubcfi(' + match[1] + match[2] + ')';
+    }
+  } catch(e) {}
+  
+  return cfi;
+}
+
 function startReader(){
   "use strict";
   var statusEl = document.getElementById('status');
@@ -1280,7 +1298,7 @@ function startReader(){
       document.addEventListener('touchend', handleSelectionCheck);
       
       document.getElementById('pdfViewer').onclick = function(e) {
-        var mark = e.target.closest('.pdf-highlight, .pdf-comment-highlight, .pdf-comment-badge');
+        var mark = e.target.closest('.pdf-highlight, .pdf-comment-highlight');
         if (mark) {
           var id = mark.dataset.annoId;
           var anno = self.annotations.find(function(a) { return a.id == id; });
@@ -1308,7 +1326,7 @@ function startReader(){
             var contents = contentsList[0];
             if (contents && contents.document) {
               contents.document.addEventListener('click', function(e) {
-                var mark = e.target.closest('.epub-comment, .epub-highlight, .epub-comment-badge, g.epub-comment, g.epub-highlight');
+                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight');
                 var matchedAnno = null;
                 
                 if (mark) {
@@ -1649,7 +1667,6 @@ function startReader(){
         } else if (anno.docType === 'epub') {
           try {
             rendition.annotations.remove(anno.cfiRange, 'highlight');
-            rendition.annotations.remove(anno.cfiRange, 'underline');
           } catch(e) {}
           this.renderAllEPUBAnnotations();
         }
@@ -1674,7 +1691,11 @@ function startReader(){
           }
         }, 150);
       } else if (anno.docType === 'epub') {
-        rendition.display(anno.cfiRange);
+        if (!anno.cfiRange) return;
+        var targetCfi = getPointCfi(anno.cfiRange);
+        rendition.display(targetCfi).catch(function() {
+          rendition.display(anno.cfiRange);
+        });
       }
     },
     
@@ -1717,14 +1738,6 @@ function startReader(){
               
               div.innerHTML = '';
               if (before) div.appendChild(document.createTextNode(before));
-
-              if (isComment && overlapStart === anno.startOffset) {
-                var badge = document.createElement('span');
-                badge.className = 'pdf-comment-badge';
-                badge.dataset.annoId = anno.id;
-                badge.textContent = '💬 ';
-                div.appendChild(badge);
-              }
               
               var mark = document.createElement('span');
               mark.className = className;
@@ -1750,72 +1763,9 @@ function startReader(){
       
       try {
         rendition.annotations.remove(anno.cfiRange, 'highlight');
-        rendition.annotations.remove(anno.cfiRange, 'underline');
       } catch(e) {}
       
       rendition.annotations.add('highlight', anno.cfiRange, {}, null, cssClass, styles);
-      this.renderEPUBBadges();
-    },
-    
-    renderEPUBBadges: function() {
-      if (!rendition) return;
-      var contentsList = rendition.getContents();
-      if (!contentsList || !contentsList.length) return;
-      
-      var self = this;
-      contentsList.forEach(function(contents) {
-        if (!contents || !contents.document) return;
-        var doc = contents.document;
-        
-        var oldBadges = doc.querySelectorAll('.epub-comment-badge');
-        for (var i = 0; i < oldBadges.length; i++) {
-          oldBadges[i].parentNode.removeChild(oldBadges[i]);
-        }
-        
-        self.annotations.forEach(function(anno) {
-          var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
-          if (anno.docType === 'epub' && isComment && anno.cfiRange) {
-            try {
-              var range = contents.range(anno.cfiRange);
-              if (range) {
-                var badge = doc.createElement('span');
-                badge.className = 'epub-comment-badge';
-                badge.dataset.annoId = anno.id;
-                badge.textContent = '💬 ';
-                badge.title = anno.comment ? ('Comment: ' + anno.comment) : 'View comment';
-                
-                badge.onclick = function(e) {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  var iframe = rendition.manager.views._views[0].iframe;
-                  var iframeRect = iframe.getBoundingClientRect();
-                  var targetRect = badge.getBoundingClientRect();
-                  var rect = {
-                    top: targetRect.top + iframeRect.top,
-                    left: targetRect.left + iframeRect.left,
-                    width: targetRect.width,
-                    height: targetRect.height,
-                    bottom: targetRect.bottom + iframeRect.top
-                  };
-                  self.showViewCommentPopover(rect, anno);
-                };
-
-                var startNode = range.startContainer;
-                if (startNode.nodeType === 3) {
-                  var textAt = startNode.splitText(range.startOffset);
-                  startNode.parentNode.insertBefore(badge, textAt);
-                } else if (startNode.nodeType === 1) {
-                  if (startNode.childNodes.length > range.startOffset) {
-                    startNode.insertBefore(badge, startNode.childNodes[range.startOffset]);
-                  } else {
-                    startNode.insertBefore(badge, startNode.firstChild);
-                  }
-                }
-              }
-            } catch(err) {}
-          }
-        });
-      });
     },
 
     renderAllEPUBAnnotations: function() {
@@ -1825,7 +1775,6 @@ function startReader(){
           self.renderEPUBAnnotation(anno);
         }
       });
-      self.renderEPUBBadges();
     },
     
     showViewCommentPopover: function(rect, anno) {
@@ -2003,7 +1952,8 @@ function startReader(){
         '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
         '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.35 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
         '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(237, 233, 254, 0.45) !important; border-bottom: 2px solid #8b5cf6 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
-        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.4 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }'
+        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.4 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
+        '.epub-comment::before, [class*="epub-comment"]::before { content: "💬 " !important; font-size: 14px !important; margin-right: 3px !important; display: inline-block !important; vertical-align: top !important; line-height: 1 !important; }'
       );
 
       if (mode === 'dark') {
