@@ -128,7 +128,12 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;
     font-family:"Open Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--kap-text)}
-  #app{display:flex;flex-direction:column;height:100vh;background:var(--kap-col-bg);transition: background-color 0.15s, color 0.15s;}
+  #app{display:flex;flex-direction:column;height:100vh;background:var(--kap-col-bg);}
+  
+  #app, #toolbar, #searchResults, #annotationDrawer, .anno-popover, .sr-head, .sr-list, .sr-item, .anno-filters, #annoGlobalActions, .rbtn, #tocSelect, #search, #pageInput, .page-slot {
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
   .kap-topbar{height:6px;background:var(--kap-purple);flex:0 0 auto}
   #toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;padding:10px 14px;
     border-bottom:1px solid var(--kap-line);z-index:10;user-select:none;flex:0 0 auto}
@@ -1986,7 +1991,8 @@ function startReader(){
       var cssRules = [];
       
       cssRules.push(
-        'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; }',
+        'body { transition: background-color 0.25s ease, color 0.25s ease !important; }',
+        'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; transition: color 0.25s ease !important; }',
         'span, b, i, strong, em, code, small, sub, sup, a { font-size: inherit !important; line-height: inherit !important; }'
       );
 
