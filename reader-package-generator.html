@@ -919,8 +919,8 @@ function startReader(){
     rendition.themes.default({
       '::selection': { 'background':'rgba(36,15,110,.22)' },
       '.epub-search-match': { 'background-color': 'rgba(36, 15, 110, 0.3) !important', 'border-bottom': '2px solid var(--kap-purple)' },
-      '.epub-highlight': { 'fill': '#fef08a !important', 'fill-opacity': '0.55 !important', 'background-color': 'rgba(254, 240, 138, 0.55) !important', 'border-bottom': '2px solid #eab308 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important' },
-      '.epub-comment': { 'fill': '#ede9fe !important', 'fill-opacity': '0.85 !important', 'background-color': 'rgba(237, 233, 254, 0.85) !important', 'border-bottom': '2px solid #8b5cf6 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important' }
+      '.epub-highlight': { 'fill': '#fef08a !important', 'fill-opacity': '0.35 !important', 'background-color': 'rgba(254, 240, 138, 0.55) !important', 'border-bottom': '2px solid #eab308 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important', 'mix-blend-mode': 'multiply !important' },
+      '.epub-comment': { 'fill': '#ede9fe !important', 'fill-opacity': '0.4 !important', 'background-color': 'rgba(237, 233, 254, 0.45) !important', 'border-bottom': '2px solid #8b5cf6 !important', 'cursor': 'pointer !important', 'pointer-events': 'auto !important', 'mix-blend-mode': 'multiply !important' }
     });
 
     rendition.themes.register('dark', {
@@ -1719,8 +1719,8 @@ function startReader(){
       var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
       var cssClass = isComment ? 'epub-comment' : 'epub-highlight';
       var styles = isComment 
-        ? { fill: '#ede9fe', 'fill-opacity': '0.85', stroke: '#8b5cf6', 'stroke-width': '1px' }
-        : { fill: '#fef08a', 'fill-opacity': '0.55', stroke: '#eab308', 'stroke-width': '1px' };
+        ? { fill: '#ede9fe', 'fill-opacity': '0.4', stroke: '#8b5cf6', 'stroke-width': '1px' }
+        : { fill: '#fef08a', 'fill-opacity': '0.35', stroke: '#eab308', 'stroke-width': '1px' };
       
       try {
         rendition.annotations.remove(anno.cfiRange, 'highlight');
@@ -1973,10 +1973,10 @@ function startReader(){
 
       // Base annotation styles (Light Mode Defaults)
       cssRules.push(
-        '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; }',
-        '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.65 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; }',
-        '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(237, 233, 254, 0.85) !important; border-bottom: 2px solid #8b5cf6 !important; cursor: pointer !important; pointer-events: auto !important; }',
-        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.85 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; }'
+        '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
+        '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.35 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
+        '.epub-comment, g.epub-comment, [class*="epub-comment"] { background-color: rgba(237, 233, 254, 0.45) !important; border-bottom: 2px solid #8b5cf6 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
+        '.epub-comment rect, g.epub-comment rect { fill: #ede9fe !important; fill-opacity: 0.4 !important; stroke: #8b5cf6 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }'
       );
 
       if (mode === 'dark') {
