@@ -146,7 +146,7 @@
   #progressBar { height: 3px; background: var(--kap-line); width: 100%; flex: 0 0 auto; position: relative; z-index: 12; overflow: hidden; }
   #progressFill { height: 100%; background: var(--kap-purple); width: 0%; transition: width 0.3s ease; }
 
-  /* Outline Selector dropdown styles (Recommendation 3: Premium Pill Styling) */
+  /* Outline Selector dropdown styles */
   #tocSelect {
     max-width: 190px;
     border: none;
@@ -218,6 +218,19 @@
   .textLayer ::selection{background:rgba(36,15,110,.22)}
   .textLayer span.search-hit{background:rgba(36,15,110,.16);border-radius:2px}
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
+  
+  /* Live Text-To-Speech Reading Highlight Styles */
+  .textLayer span.tts-active {
+    background: rgba(139, 92, 246, 0.35) !important;
+    outline: 2px solid #7c3aed;
+    border-radius: 3px;
+    transition: background 0.15s ease, outline 0.15s ease;
+  }
+  #app.dark-theme .textLayer span.tts-active {
+    background: rgba(165, 180, 252, 0.45) !important;
+    outline: 2px solid #a5b4fc;
+  }
+
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
   /* Annotation Highlighting Styles */
@@ -2060,7 +2073,8 @@ function startReader(){
       cssRules.push(
         'body { transition: background-color 0.25s ease, color 0.25s ease !important; }',
         'p, li, td, pre, blockquote, dt, dd, div { font-size: ' + calcSize + 'px !important; line-height: ' + calcLine + 'px !important; transition: color 0.25s ease !important; }',
-        'span, b, i, strong, em, code, small, sub, sup, a { font-size: inherit !important; line-height: inherit !important; }'
+        'span, b, i, strong, em, code, small, sub, sup, a { font-size: inherit !important; line-height: inherit !important; }',
+        '.tts-active-element { background-color: rgba(237, 233, 254, 0.65) !important; border-left: 4px solid #7c3aed !important; padding-left: 6px !important; transition: background-color 0.2s ease !important; }'
       );
 
       // Base annotation styles (Light Mode Defaults)
@@ -2074,6 +2088,7 @@ function startReader(){
       if (mode === 'dark') {
         cssRules.push(
           'body { background: #121212 !important; color: #e2e8f0 !important; }',
+          '.tts-active-element { background-color: rgba(165, 180, 252, 0.25) !important; border-left: 4px solid #a5b4fc !important; }',
           'h1, h2, h3, h4, h5, h6, .heading, .title, [class*="heading"], [class*="title"], [class*="reading"], [class*="update"], [class*="understanding"], [class*="test"], [class*="chapter"], [class*="required"], [class*="summary"], [class*="blue"], [class*="navy"], [class*="acca"], [class*="performance"], [class*="objective"], [class*="header"], [class*="head_"] { color: #ffffff !important; }',
           'h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, .heading *, .title *, [class*="heading"] *, [class*="title"] *, [class*="reading"] *, [class*="update"] *, [class*="understanding"] *, [class*="test"] *, [class*="chapter"] *, [class*="required"] *, [class*="summary"] *, [class*="blue"] *, [class*="navy"] *, [class*="acca"] *, [class*="performance"] *, [class*="objective"] *, [class*="header"] *, [class*="head_"] * { color: #ffffff !important; }',
           'a, a *, [class*="link"], [class*="link"] * { color: #a5b4fc !important; }',
@@ -2142,7 +2157,7 @@ function startReader(){
   }
 
   /* ==========================================================================
-     TEXT-TO-SPEECH AUDIO ENGINE (WCAG ACCESSIBILITY)
+     TEXT-TO-SPEECH AUDIO ENGINE (WCAG ACCESSIBILITY & LIVE HIGHLIGHTING)
      ========================================================================== */
   function initializeTTS() {
     var ttsPlayBtn = document.getElementById('ttsPlayBtn');
@@ -2157,31 +2172,30 @@ function startReader(){
     var synth = window.speechSynthesis;
     var currentUtterance = null;
     var isReading = false;
+    var isPaused = false;
+    var activeSpansMap = [];
+    var activeEpubNodesMap = [];
 
-    function getActiveText() {
-      if (DOC.type === 'pdf') {
-        var curPage = currentTopPage();
-        if (pageData[curPage] && pageData[curPage].rawText) {
-          return pageData[curPage].rawText.trim();
-        }
-        var activeSlot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
-        return activeSlot ? activeSlot.innerText.trim() : '';
-      } else if (DOC.type === 'epub') {
-        try {
-          var view = rendition.manager.views._views[0];
-          if (view && view.contents && view.contents.document) {
-            return view.contents.document.body.innerText.trim();
+    function clearTTSHighlights() {
+      document.querySelectorAll('.tts-active').forEach(function(el){ el.classList.remove('tts-active'); });
+      try {
+        if (DOC.type === 'epub' && rendition) {
+          var views = rendition.manager.views._views;
+          if (views && views[0] && views[0].contents) {
+            var doc = views[0].contents.document;
+            doc.querySelectorAll('.tts-active-element').forEach(function(el){ el.classList.remove('tts-active-element'); });
           }
-        } catch(e) {}
-      }
-      return '';
+        }
+      } catch(e){}
     }
 
     function stopTTS() {
-      if (synth.speaking || synth.pending) {
+      if (synth.speaking || synth.pending || synth.paused) {
         synth.cancel();
       }
       isReading = false;
+      isPaused = false;
+      clearTTSHighlights();
       if (ttsPlayBtn) {
         ttsPlayBtn.textContent = '🔊';
         ttsPlayBtn.classList.remove('active');
@@ -2193,23 +2207,75 @@ function startReader(){
     }
 
     function playTTS() {
-      if (synth.paused && isReading) {
-        synth.resume();
-        ttsPlayBtn.textContent = '⏸️';
-        ttsPlayBtn.title = 'Pause Reading';
-        return;
-      }
-
-      if (synth.speaking && !synth.paused) {
-        synth.pause();
-        ttsPlayBtn.textContent = '🔊';
-        ttsPlayBtn.title = 'Resume Reading';
-        return;
+      if (isReading) {
+        if (isPaused) {
+          synth.resume();
+          isPaused = false;
+          ttsPlayBtn.textContent = '⏸️';
+          ttsPlayBtn.title = 'Pause Reading';
+          return;
+        } else {
+          synth.pause();
+          isPaused = true;
+          ttsPlayBtn.textContent = '🔊';
+          ttsPlayBtn.title = 'Resume Reading';
+          return;
+        }
       }
 
       stopTTS();
 
-      var textToRead = getActiveText();
+      var textToRead = '';
+      activeSpansMap = [];
+      activeEpubNodesMap = [];
+
+      if (DOC.type === 'pdf') {
+        var curPage = currentTopPage();
+        var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
+        if (slot) {
+          var spans = slot.querySelectorAll('span');
+          var charCount = 0;
+          spans.forEach(function(span) {
+            var txt = span.textContent;
+            if (txt) {
+              activeSpansMap.push({
+                el: span,
+                start: charCount,
+                end: charCount + txt.length
+              });
+              textToRead += txt + ' ';
+              charCount += txt.length + 1;
+            }
+          });
+        }
+      } else if (DOC.type === 'epub') {
+        try {
+          var view = rendition.manager.views._views[0];
+          if (view && view.contents && view.contents.document) {
+            var doc = view.contents.document;
+            var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, div');
+            var charCount = 0;
+            elems.forEach(function(el) {
+              if (el.children.length === 0 || (el.tagName !== 'DIV' && el.querySelector('p, div, h1, h2, h3') === null)) {
+                var txt = el.innerText.trim();
+                if (txt.length > 0) {
+                  activeEpubNodesMap.push({
+                    el: el,
+                    start: charCount,
+                    end: charCount + txt.length
+                  });
+                  textToRead += txt + ' ';
+                  charCount += txt.length + 1;
+                }
+              }
+            });
+            if (!textToRead) {
+              textToRead = doc.body.innerText.trim();
+            }
+          }
+        } catch(e) {}
+      }
+
       if (!textToRead) {
         showToast('No readable text found on this page.');
         return;
@@ -2221,10 +2287,30 @@ function startReader(){
 
       currentUtterance.onstart = function() {
         isReading = true;
+        isPaused = false;
         ttsPlayBtn.textContent = '⏸️';
         ttsPlayBtn.classList.add('active');
         ttsPlayBtn.title = 'Pause Reading';
         if (ttsStopBtn) ttsStopBtn.classList.remove('hidden');
+      };
+
+      currentUtterance.onboundary = function(e) {
+        var charIdx = e.charIndex;
+        if (DOC.type === 'pdf') {
+          var match = activeSpansMap.find(function(m) { return charIdx >= m.start && charIdx <= m.end; });
+          if (match) {
+            clearTTSHighlights();
+            match.el.classList.add('tts-active');
+            match.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        } else if (DOC.type === 'epub') {
+          var match = activeEpubNodesMap.find(function(m) { return charIdx >= m.start && charIdx <= m.end; });
+          if (match) {
+            clearTTSHighlights();
+            match.el.classList.add('tts-active-element');
+            match.el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
       };
 
       currentUtterance.onend = function() {
@@ -2418,6 +2504,7 @@ function startReader(){
       '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
       '  - Accessible WCAG AAA Dark Mode theme toggler',
+      '  - Text-To-Speech read aloud with live visual text highlighting',
       ''
     ].join('\n');
   }
