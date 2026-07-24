@@ -666,11 +666,7 @@ function startReader(){
       }
     }
     if (DOC.type === 'epub' && rendition) {
-      var resizeInterval = setInterval(function() {
-        try { rendition.resize(); } catch(e){}
-      }, 50);
       setTimeout(function() {
-        clearInterval(resizeInterval);
         try { rendition.resize(); } catch(e){}
       }, 360);
     }
