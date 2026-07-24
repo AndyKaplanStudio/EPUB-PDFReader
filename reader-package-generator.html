@@ -1609,7 +1609,7 @@ function startReader(){
       document.getElementById('addHighlightBtn').disabled = true;
       document.getElementById('addCommentBtn').disabled = true;
     },
-    
+
     toggleDrawer: function(force) {
       var drawer = document.getElementById('annotationDrawer');
       var open = force !== undefined ? force : !drawer.classList.contains('open');
@@ -2268,15 +2268,51 @@ function startReader(){
 
     function extractSpeechBlocks() {
       var blocks = [];
+
+      // 1. Check for active user text selection first (PDF or EPUB)
+      if (DOC.type === 'pdf') {
+        var pdfSel = window.getSelection();
+        if (pdfSel && !pdfSel.isCollapsed && pdfSel.rangeCount > 0) {
+          var selText = pdfSel.toString().trim();
+          if (selText.length > 0) {
+            var anchorEl = pdfSel.anchorNode ? (pdfSel.anchorNode.nodeType === 3 ? pdfSel.anchorNode.parentNode : pdfSel.anchorNode) : null;
+            blocks.push({ el: anchorEl, text: selText });
+            return blocks;
+          }
+        }
+      } else if (DOC.type === 'epub' && rendition) {
+        try {
+          var contentsList = rendition.getContents();
+          if (contentsList && contentsList.length > 0) {
+            var iframeWin = contentsList[0].window;
+            var epubSel = iframeWin ? iframeWin.getSelection() : null;
+            if (epubSel && !epubSel.isCollapsed && epubSel.rangeCount > 0) {
+              var selText = epubSel.toString().trim();
+              if (selText.length > 0) {
+                var anchorEl = epubSel.anchorNode ? (epubSel.anchorNode.nodeType === 3 ? epubSel.anchorNode.parentNode : epubSel.anchorNode) : null;
+                blocks.push({ el: anchorEl, text: selText });
+                return blocks;
+              }
+            }
+          }
+        } catch(e) {}
+      }
+
+      // 2. If no text is manually selected, extract visible text inside current page/screen viewport
       if (DOC.type === 'pdf') {
         var curPage = currentTopPage();
         var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
         if (slot) {
+          var viewerRect = el.viewerArea.getBoundingClientRect();
           var spans = slot.querySelectorAll('span');
           spans.forEach(function(span) {
             var txt = (span.textContent || '').trim();
             if (txt.length > 0) {
-              blocks.push({ el: span, text: txt });
+              var rect = span.getBoundingClientRect();
+              // Only include spans that are currently visible within or below the viewer scroll offset
+              if (rect.bottom >= viewerRect.top) {
+                blocks.push({ el: span, text: txt });
+              }
             }
           });
         }
@@ -2285,6 +2321,10 @@ function startReader(){
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
             var doc = contentsList[0].document;
+            var iframe = rendition.manager.views._views[0].iframe;
+            var iframeWidth = iframe ? iframe.clientWidth : window.innerWidth;
+            var iframeHeight = iframe ? iframe.clientHeight : window.innerHeight;
+
             var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd');
             if (!elems || elems.length === 0) {
               elems = doc.querySelectorAll('div, section, body');
@@ -2294,7 +2334,12 @@ function startReader(){
               if (!hasBlockChild) {
                 var txt = (el.innerText || el.textContent || '').trim();
                 if (txt.length > 0) {
-                  blocks.push({ el: el, text: txt });
+                  var r = el.getBoundingClientRect();
+                  // Check if element is horizontally & vertically visible inside the paginated EPUB viewport
+                  var isVisibleInViewport = (r.right > 0 && r.left < iframeWidth && r.bottom > 0 && r.top < iframeHeight);
+                  if (isVisibleInViewport) {
+                    blocks.push({ el: el, text: txt });
+                  }
                 }
               }
             });
@@ -2524,7 +2569,7 @@ function startReader(){
       '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
       '  - Accessible WCAG AAA Dark Mode theme toggler',
-      '  - Text-To-Speech read aloud with live visual text highlighting',
+      '  - Text-To-Speech read aloud with live visual text highlighting and selection support',
       ''
     ].join('\n');
   }
