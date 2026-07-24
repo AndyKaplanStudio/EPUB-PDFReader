@@ -206,7 +206,12 @@
   #pageInput:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--kap-purple)}
   #pageCount{color:var(--kap-muted)}
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
-  #viewerArea{position:absolute;inset:0;overflow:auto}
+  #viewerArea{position:absolute;top:0;left:0;bottom:0;right:0;overflow:auto;
+    transition:right 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
+  #stage.sidebar-open #viewerArea{right:320px}
+  @media (max-width: 390px) {
+    #stage.sidebar-open #viewerArea{right:82%}
+  }
   
   /* PDF Annotations & TextLayer */
   #pdfViewer{padding:22px 0;display:flex;flex-direction:column;align-items:center;gap:18px}
@@ -646,13 +651,32 @@ function startReader(){
     tocSelect: document.getElementById('tocSelect')
   };
   var clearSearchHighlights = null;
-  function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); AnnotationManager.toggleDrawer(false); }
+  function updateSidebarState(){
+    var isSearchOpen = el.panel.classList.contains('open');
+    var annoDrawer = document.getElementById('annotationDrawer');
+    var isAnnoOpen = annoDrawer && annoDrawer.classList.contains('open');
+    var stage = document.getElementById('stage');
+    if (stage) {
+      if (isSearchOpen || isAnnoOpen) {
+        stage.classList.add('sidebar-open');
+      } else {
+        stage.classList.remove('sidebar-open');
+      }
+    }
+    if (DOC.type === 'epub' && rendition) {
+      setTimeout(function() {
+        try { rendition.resize(); } catch(e){}
+      }, 320);
+    }
+  }
+  function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); AnnotationManager.toggleDrawer(false); updateSidebarState(); }
   function closePanel(){ 
     el.panel.classList.remove('open'); 
     el.searchList.classList.remove('active'); 
     if (typeof clearSearchHighlights === 'function') {
       clearSearchHighlights();
     }
+    updateSidebarState();
   }
   el.srClose.onclick = closePanel;
   el.searchList.onclick = function(){ el.panel.classList.contains('open') ? closePanel() : openPanel(); };
@@ -1651,6 +1675,7 @@ function startReader(){
       } else {
         drawer.classList.remove('open');
       }
+      updateSidebarState();
     },
     
     renderDrawer: function() {
