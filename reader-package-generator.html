@@ -206,8 +206,9 @@
   #pageInput:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--kap-purple)}
   #pageCount{color:var(--kap-muted)}
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
-  #viewerArea{position:absolute;top:0;left:0;bottom:0;right:0;overflow:auto;
-    transition:right 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
+  #viewerArea{position:absolute;top:0;left:0;bottom:0;right:0px;overflow:auto;
+    will-change: right;
+    transition:right 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
   #stage.sidebar-open #viewerArea{right:320px}
   @media (max-width: 390px) {
     #stage.sidebar-open #viewerArea{right:82%}
@@ -271,8 +272,9 @@
   #searchResults, #annotationDrawer{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
     background:#fff;border-left:1px solid var(--kap-line);box-shadow:-2px 0 14px rgba(34,33,33,.10);
     z-index:15;display:flex;flex-direction:column;
+    will-change: transform;
     transform:translateX(100%);visibility:hidden;
-    transition:transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
+    transition:transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
   #searchResults.open, #annotationDrawer.open{transform:translateX(0);visibility:visible}
   .sr-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--kap-line)}
   .sr-title{font-size:13px;font-weight:700;color:var(--kap-muted);letter-spacing:.1px}
@@ -664,9 +666,13 @@ function startReader(){
       }
     }
     if (DOC.type === 'epub' && rendition) {
-      setTimeout(function() {
+      var resizeInterval = setInterval(function() {
         try { rendition.resize(); } catch(e){}
-      }, 320);
+      }, 50);
+      setTimeout(function() {
+        clearInterval(resizeInterval);
+        try { rendition.resize(); } catch(e){}
+      }, 360);
     }
   }
   function openPanel(){ el.panel.classList.add('open'); el.searchList.classList.add('active'); AnnotationManager.toggleDrawer(false); updateSidebarState(); }
