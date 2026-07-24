@@ -208,7 +208,7 @@
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
   #viewerArea{position:absolute;top:0;left:0;bottom:0;right:0px;overflow:auto;
     will-change: right;
-    transition:right 0.35s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;}
+    transition:right 0.35s cubic-bezier(0.4, 0, 0.2, 1);}
   #stage.sidebar-open #viewerArea{right:320px}
   @media (max-width: 390px) {
     #stage.sidebar-open #viewerArea{right:82%}
@@ -1513,33 +1513,37 @@ function startReader(){
           if (contentsList && contentsList.length > 0) {
             var contents = contentsList[0];
             if (contents && contents.document) {
-              contents.document.addEventListener('click', function(e) {
-                var mark = e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight');
+              var doc = contents.document;
+              doc.addEventListener('click', function(e) {
                 var matchedAnno = null;
                 
-                if (mark) {
-                  if (mark.dataset && mark.dataset.annoId) {
-                    matchedAnno = self.annotations.find(function(a) { return a.id == mark.dataset.annoId; });
-                  } else {
-                    var selectedText = (mark.textContent || '').trim();
-                    matchedAnno = self.annotations.find(function(a) {
-                      return a.docType === 'epub' && (selectedText.indexOf(a.text.trim()) !== -1 || a.text.trim().indexOf(selectedText) !== -1);
-                    });
-                  }
-                }
-                
-                if (!matchedAnno) {
-                  var clickedText = (e.target.textContent || '').trim();
-                  if (clickedText) {
-                    self.annotations.forEach(function(anno) {
-                      if (anno.docType === 'epub') {
-                        var annoTextClean = (anno.text || '').trim();
-                        if (annoTextClean && clickedText.indexOf(annoTextClean) !== -1) {
-                          matchedAnno = anno;
+                // Spatial hit testing against annotation CFI Ranges
+                for (var i = 0; i < self.annotations.length; i++) {
+                  var a = self.annotations[i];
+                  if (a.docType !== 'epub' || !a.cfiRange) continue;
+                  
+                  try {
+                    var cfi = getPointCfi(a.cfiRange);
+                    var range = new ePub.CFI(cfi).toRange(doc);
+                    if (range) {
+                      var rects = range.getClientRects();
+                      for (var r = 0; r < rects.length; r++) {
+                        var rect = rects[r];
+                        if (rect.width > 0 && rect.height > 0 &&
+                            e.clientX >= rect.left - 4 && e.clientX <= rect.right + 4 &&
+                            e.clientY >= rect.top - 4 && e.clientY <= rect.bottom + 4) {
+                          matchedAnno = a;
+                          break;
                         }
                       }
-                    });
-                  }
+                    }
+                  } catch(err) {}
+                  if (matchedAnno) break;
+                }
+
+                var isAnnoElement = e.target.closest && e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight, [class*="epub-comment"], [class*="epub-highlight"]');
+                if (!matchedAnno && isAnnoElement && isAnnoElement.dataset && isAnnoElement.dataset.annoId) {
+                  matchedAnno = self.annotations.find(function(a) { return a.id == isAnnoElement.dataset.annoId; });
                 }
 
                 if (matchedAnno) {
@@ -1557,7 +1561,7 @@ function startReader(){
                 }
               });
 
-              contents.document.addEventListener('mouseup', function() {
+              doc.addEventListener('mouseup', function() {
                 setTimeout(function() {
                   var sel = contents.window.getSelection();
                   if (!sel || sel.isCollapsed) {
@@ -1943,6 +1947,7 @@ function startReader(){
     
     renderEPUBAnnotation: function(anno) {
       if (anno.docType !== 'epub') return;
+      var self = this;
       
       var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
       var cssClass = isComment ? 'epub-comment' : 'epub-highlight';
@@ -1954,7 +1959,23 @@ function startReader(){
         rendition.annotations.remove(anno.cfiRange, 'highlight');
       } catch(e) {}
       
-      rendition.annotations.add('highlight', anno.cfiRange, {}, null, cssClass, styles);
+      var cb = function(e) {
+        try {
+          var iframe = rendition.manager.views._views[0].iframe;
+          var iframeRect = iframe.getBoundingClientRect();
+          var targetRect = (e && e.target && e.target.getBoundingClientRect) ? e.target.getBoundingClientRect() : iframeRect;
+          var rect = {
+            top: targetRect.top + iframeRect.top,
+            left: targetRect.left + iframeRect.left,
+            width: targetRect.width,
+            height: targetRect.height,
+            bottom: targetRect.bottom + iframeRect.top
+          };
+          self.showViewCommentPopover(rect, anno);
+        } catch(err) {}
+      };
+
+      rendition.annotations.add('highlight', anno.cfiRange, { annoId: anno.id }, cb, cssClass, styles);
     },
 
     renderAllEPUBAnnotations: function() {
