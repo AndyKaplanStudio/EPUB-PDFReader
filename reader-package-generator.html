@@ -58,7 +58,7 @@
 <div class="kap-topbar" aria-hidden="true"></div>
 <div class="wrap">
   <h1>Reader package generator</h1>
-  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader you can embed in your LMS via an iframe. The reader supports full-document search, zoom, annotations, auto-resume, and page navigation.</p>
+  <p class="sub">Upload a PDF or EPUB and generate a self-contained reader package for your LMS. Supports full search, annotations, auto-resume, spread view, and page-aware Text-To-Speech.</p>
 
   <div class="card">
     <div id="drop">
@@ -99,17 +99,14 @@
   <div class="card">
     <div class="hint">
       <strong>How to embed on your LMS</strong><br>
-      1. Unzip the downloaded package and upload the whole folder to your LMS / web host.<br>
+      1. Unzip the downloaded package and upload the folder to your LMS / web host.<br>
       2. Embed it with an iframe:<br>
       <code>&lt;iframe src="PATH/index.html" width="100%" height="800" style="border:0"&gt;&lt;/iframe&gt;</code><br>
-      Keep <code>index.html</code> and the <code>assets/</code> folder together. The document is embedded in the package, so you can also double-click <code>index.html</code> to preview it locally — no server needed.
+      Keep <code>index.html</code> and the <code>assets/</code> folder together.
     </div>
   </div>
 </div>
 
-<!-- ==========================================================================
-     INLINE DEPLOYABLE READER TEMPLATE (Dynamic compilation to index.html)
-     ========================================================================== -->
 <template id="readerTemplate"><!DOCTYPE html>
 <html lang="en">
 <head>
@@ -142,11 +139,9 @@
   #docTitle{font-weight:600;font-size:14px;letter-spacing:.1px;max-width:240px;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   
-  /* Reading Progress Bar */
   #progressBar { height: 3px; background: var(--kap-line); width: 100%; flex: 0 0 auto; position: relative; z-index: 12; overflow: hidden; }
   #progressFill { height: 100%; background: var(--kap-purple); width: 0%; transition: width 0.3s ease; }
 
-  /* Outline Selector dropdown styles */
   #tocSelect {
     max-width: 190px;
     border: none;
@@ -171,20 +166,11 @@
     overflow: hidden;
     transition: background-color 0.15s, box-shadow 0.15s;
   }
-  #tocSelect:hover {
-    background-color: rgba(36,15,110,.06);
-  }
-  #tocSelect:focus-visible {
-    outline: 2px solid var(--kap-focus);
-    outline-offset: 2px;
-  }
+  #tocSelect:hover { background-color: rgba(36,15,110,.06); }
+  #tocSelect:focus-visible { outline: 2px solid var(--kap-focus); outline-offset: 2px; }
   @media (max-width: 600px) {
-    #tocSelect {
-      max-width: 110px;
-    }
-    #docTitle {
-      max-width: 120px;
-    }
+    #tocSelect { max-width: 110px; }
+    #docTitle { max-width: 120px; }
   }
 
   .rbtn{border-radius:999px;background:#fff;box-shadow:0 0 0 1.5px var(--kap-purple) inset;
@@ -206,6 +192,7 @@
   #pageInput:focus-visible{outline:2px solid var(--focus);outline-offset:1px;border-color:var(--kap-purple)}
   #pageCount{color:var(--kap-muted)}
   #stage{flex:1;position:relative;min-height:0;overflow:hidden}
+  
   #viewerArea{position:absolute;top:0;left:0;bottom:0;right:0px;overflow:auto;
     will-change: right;
     transition:right 0.35s cubic-bezier(0.4, 0, 0.2, 1);}
@@ -214,7 +201,6 @@
     #stage.sidebar-open #viewerArea{right:82%}
   }
   
-  /* PDF Annotations & TextLayer */
   #pdfViewer{padding:22px 0;display:flex;flex-direction:column;align-items:center;gap:18px}
   #pdfViewer.two-page-mode{flex-direction:row!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-start!important;row-gap:20px!important;column-gap:14px!important}
   .page-slot{position:relative;flex:0 0 auto;background:#fff;box-shadow:0 1px 10px rgba(34,33,33,.10);border:1px solid var(--kap-line)}
@@ -226,7 +212,6 @@
   .textLayer span.search-hit{background:rgba(36,15,110,.16);border-radius:2px}
   .textLayer span.search-current{background:rgba(36,15,110,.45);border-radius:2px}
   
-  /* Live Text-To-Speech Reading Highlight Styles */
   .textLayer span.tts-active {
     background: rgba(139, 92, 246, 0.35) !important;
     outline: 2px solid #7c3aed;
@@ -240,7 +225,6 @@
 
   .slot-num{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#c9ccd3;font-size:13px}
 
-  /* Annotation Highlighting Styles */
   .pdf-highlight {
     background-color: rgba(254, 240, 138, 0.55) !important;
     border-bottom: 2px solid #eab308;
@@ -256,11 +240,9 @@
     pointer-events: auto !important;
   }
   
-  /* EPUB Layout */
   #epubViewer{position:absolute;inset:0}
   #epubArea{width:100%;height:100%}
   
-  /* Status overlay */
   #status{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--kap-muted);
     flex-direction:column;gap:12px;text-align:center;padding:24px;background:var(--kap-col-bg);z-index:20}
   .spinner{width:32px;height:32px;border:3px solid rgba(36,15,110,.2);border-top-color:var(--kap-purple);
@@ -268,7 +250,6 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .hidden{display:none!important}
   
-  /* Sliding Side Panel Framework (Shared) */
   #searchResults, #annotationDrawer{position:absolute;top:0;right:0;bottom:0;width:320px;max-width:82%;
     background:#fff;border-left:1px solid var(--kap-line);box-shadow:-2px 0 14px rgba(34,33,33,.10);
     z-index:15;display:flex;flex-direction:column;
@@ -288,54 +269,34 @@
   .sr-item b{color:var(--kap-purple);background:rgba(36,15,110,.12);border-radius:3px;padding:0 2px}
   .sr-empty{padding:20px 14px;color:var(--kap-muted);font-size:13px;text-align:center}
 
-  /* Annotation drawer filters header */
   .anno-filters{display:flex;gap:4px;padding:8px 14px;border-bottom:1px solid var(--kap-line);background:var(--kap-col-bg)}
   .filter-btn{flex:1;background:transparent;border:1px solid var(--kap-line);border-radius:6px;
     font-size:11px;font-weight:600;padding:5px;cursor:pointer;color:var(--kap-muted)}
   .filter-btn.active{background:var(--kap-purple);color:#fff;border-color:var(--kap-purple)}
 
-  /* Popover commenting bubble styling */
   .anno-popover {
-    position: absolute; background: #fff; border: 1px solid var(--kap-line);
-    border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 12px; z-index: 1000; width: 280px; display: flex; flex-direction: column; gap: 8px;
+    position: fixed; background: #fff; border: 1px solid var(--kap-line);
+    border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    padding: 12px; z-index: 1000; width: 290px; display: flex; flex-direction: column; gap: 8px;
+    transition: top 0.15s ease, left 0.15s ease, opacity 0.15s ease;
   }
   .anno-popover textarea {
     width: 100%; border: 1px solid var(--kap-line); border-radius: 8px;
     padding: 6px 8px; font-family: inherit; font-size: 13px; resize: none; height: 75px; outline: none;
   }
   .anno-popover textarea:focus { border-color: var(--kap-purple); }
-  .anno-popover .popover-actions {
-    display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px;
-  }
-  .anno-popover button {
-    padding: 5px 10px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600;
-  }
+  .anno-popover .popover-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+  .anno-popover button { padding: 5px 10px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; }
   .anno-popover .btn-save { background: var(--kap-purple); color: #fff; }
   .anno-popover .btn-cancel { background: var(--kap-col-bg); color: var(--kap-text); }
 
-  /* High-contrast Top-Right Popover Close Button */
   .popover-close-x {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    border: none;
-    background: transparent;
-    color: var(--kap-muted);
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    line-height: 1;
-    padding: 2px 6px;
-    border-radius: 6px;
-    transition: background 0.1s, color 0.1s;
+    position: absolute; top: 6px; right: 8px; border: none; background: transparent;
+    color: var(--kap-muted); font-size: 18px; font-weight: bold; cursor: pointer;
+    line-height: 1; padding: 2px 6px; border-radius: 6px; transition: background 0.1s, color 0.1s;
   }
-  .popover-close-x:hover {
-    background: var(--kap-col-bg);
-    color: var(--kap-text);
-  }
+  .popover-close-x:hover { background: var(--kap-col-bg); color: var(--kap-text); }
 
-  /* ACCESSIBLE DARK THEME CUSTOMIZATIONS */
   #app.dark-theme {
     --kap-purple: #a5b4fc;
     --kap-text: #e2e8f0;
@@ -348,111 +309,42 @@
   #app.dark-theme #searchResults,
   #app.dark-theme #annotationDrawer,
   #app.dark-theme .anno-popover,
-  #app.dark-theme .anno-filters {
-    background-color: #1e1e1e !important;
-    color: var(--kap-text) !important;
-  }
-  #app.dark-theme #progressFill {
-    background-color: #a5b4fc !important;
-  }
-  #app.dark-theme #searchResults,
-  #app.dark-theme #annotationDrawer {
-    border-left: 1px solid var(--kap-line) !important;
-  }
-  #app.dark-theme .rbtn {
-    background-color: #1e1e1e !important;
-    color: var(--kap-purple) !important;
-    box-shadow: 0 0 0 1.5px var(--kap-purple) inset !important;
-  }
-  #app.dark-theme .rbtn:hover {
-    background-color: rgba(165, 180, 252, 0.12) !important;
-  }
-  #app.dark-theme .rbtn.active {
-    background-color: var(--kap-purple) !important;
-    color: #121212 !important;
-  }
+  #app.dark-theme .anno-filters { background-color: #1e1e1e !important; color: var(--kap-text) !important; }
+  #app.dark-theme #progressFill { background-color: #a5b4fc !important; }
+  #app.dark-theme #searchResults, #app.dark-theme #annotationDrawer { border-left: 1px solid var(--kap-line) !important; }
+  #app.dark-theme .rbtn { background-color: #1e1e1e !important; color: var(--kap-purple) !important; box-shadow: 0 0 0 1.5px var(--kap-purple) inset !important; }
+  #app.dark-theme .rbtn:hover { background-color: rgba(165, 180, 252, 0.12) !important; }
+  #app.dark-theme .rbtn.active { background-color: var(--kap-purple) !important; color: #121212 !important; }
   #app.dark-theme #tocSelect {
-    background-color: #1e1e1e !important;
-    color: var(--kap-purple) !important;
+    background-color: #1e1e1e !important; color: var(--kap-purple) !important;
     box-shadow: 0 0 0 1.5px var(--kap-purple) inset !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a5b4fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
   }
-  #app.dark-theme #tocSelect:hover {
-    background-color: rgba(165, 180, 252, 0.12) !important;
+  #app.dark-theme #tocSelect:hover { background-color: rgba(165, 180, 252, 0.12) !important; }
+  #app.dark-theme #search, #app.dark-theme #pageInput, #app.dark-theme .anno-popover textarea {
+    background-color: #121212 !important; color: var(--kap-text) !important; border: 1px solid var(--kap-line) !important;
   }
-  #app.dark-theme #search,
-  #app.dark-theme #pageInput,
-  #app.dark-theme .anno-popover textarea {
-    background-color: #121212 !important;
-    color: var(--kap-text) !important;
-    border: 1px solid var(--kap-line) !important;
-  }
-  #app.dark-theme #tocSelect option {
-    background-color: #121212 !important;
-    color: var(--kap-text) !important;
-  }
-  #app.dark-theme .sr-item {
-    color: var(--kap-muted) !important;
-  }
-  #app.dark-theme .sr-item:hover {
-    background-color: #242424 !important;
-    color: var(--kap-text) !important;
-  }
-  #app.dark-theme .sr-item.active {
-    background-color: rgba(165, 180, 252, 0.1) !important;
-    border-color: rgba(165, 180, 252, 0.3) !important;
-    color: var(--kap-text) !important;
-  }
-  #app.dark-theme .sr-item b {
-    color: var(--kap-purple) !important;
-    background-color: rgba(165, 180, 252, 0.15) !important;
-  }
-  #app.dark-theme #annoGlobalActions {
-    background-color: #1e1e1e !important;
-    border-bottom: 1px solid var(--kap-line) !important;
-  }
-  #app.dark-theme .textLayer ::selection {
-    background: rgba(165, 180, 252, 0.35) !important;
-  }
-  #app.dark-theme .page-slot {
-    background-color: #1e1e1e !important;
-    border-color: var(--kap-line) !important;
-  }
-  #app.dark-theme .page-slot canvas {
-    filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95);
-  }
+  #app.dark-theme #tocSelect option { background-color: #121212 !important; color: var(--kap-text) !important; }
+  #app.dark-theme .sr-item { color: var(--kap-muted) !important; }
+  #app.dark-theme .sr-item:hover { background-color: #242424 !important; color: var(--kap-text) !important; }
+  #app.dark-theme .sr-item.active { background-color: rgba(165, 180, 252, 0.1) !important; border-color: rgba(165, 180, 252, 0.3) !important; color: var(--kap-text) !important; }
+  #app.dark-theme .sr-item b { color: var(--kap-purple) !important; background-color: rgba(165, 180, 252, 0.15) !important; }
+  #app.dark-theme #annoGlobalActions { background-color: #1e1e1e !important; border-bottom: 1px solid var(--kap-line) !important; }
+  #app.dark-theme .textLayer ::selection { background: rgba(165, 180, 252, 0.35) !important; }
+  #app.dark-theme .page-slot { background-color: #1e1e1e !important; border-color: var(--kap-line) !important; }
+  #app.dark-theme .page-slot canvas { filter: invert(0.9) hue-rotate(180deg) contrast(1.15) brightness(0.95); }
 
-  /* Responsive Toolbar Styling */
-  #mobileGroup {
-    display: none !important;
-  }
+  #mobileGroup { display: none !important; }
   @media (max-width: 768px) {
-    #mobileGroup {
-      display: flex !important;
-    }
-    #toolbar {
-      flex-direction: row;
-      justify-content: space-between;
-    }
-    #toolbar .group {
-      border-right: none;
-    }
-    #toolbar .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) {
-      display: none !important;
-    }
-    #toolbar.menu-open {
-      flex-direction: column;
-      align-items: stretch;
-    }
+    #mobileGroup { display: flex !important; }
+    #toolbar { flex-direction: row; justify-content: space-between; }
+    #toolbar .group { border-right: none; }
+    #toolbar .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) { display: none !important; }
+    #toolbar.menu-open { flex-direction: column; align-items: stretch; }
     #toolbar.menu-open .group:not(#titleGroup):not(#navGroup):not(#mobileGroup) {
-      display: flex !important;
-      flex-wrap: wrap;
-      padding: 10px 0;
-      border-top: 1px solid var(--kap-line);
+      display: flex !important; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--kap-line);
     }
-    #toolbar.menu-open #mobileGroup {
-      align-self: flex-end;
-    }
+    #toolbar.menu-open #mobileGroup { align-self: flex-end; }
   }
 </style>
 </head>
@@ -533,9 +425,15 @@
   </div>
 </div>
 
-<script src="assets/document-data.js"></script>
+<script id="docPayload" type="application/json">/*DOC_PAYLOAD_PLACEHOLDER*/</script>
 <script>
 (function(){
+  var payloadEl = document.getElementById('docPayload');
+  if (payloadEl && payloadEl.textContent.trim()) {
+    try {
+      window.__DOC__ = JSON.parse(payloadEl.textContent);
+    } catch(e) {}
+  }
   var cfg = window.__DOC__ || {};
   var libs = cfg.libs || ['assets/jszip.min.js','assets/pdf.min.js','assets/epub.min.js'];
   var fallback = cfg.libsFallback || [];
@@ -582,6 +480,11 @@ function startReader(){
 
   if(typeof window.__DOC__ === 'undefined'){ fail('No document data found.'); return; }
   var DOC = window.__DOC__;
+  
+  if (DOC.chunks && DOC.chunks.length) {
+    DOC.base64 = DOC.chunks.join('');
+  }
+
   document.getElementById('docTitle').textContent = DOC.name || 'Document';
   document.title = DOC.name || 'Reader';
 
@@ -637,8 +540,6 @@ function startReader(){
   function esc(s){ return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function reEsc(s){ return s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&'); }
   function b64ToBytes(b64){ var bin=atob(b64),len=bin.length,a=new Uint8Array(len); for(var i=0;i<len;i++)a[i]=bin.charCodeAt(i); return a; }
-  var localHint = (!DOC.base64 && location.protocol==='file:')
-    ? ' It looks like this page was opened directly from disk (file://). The document must be served over http — upload the folder to your LMS/web host, or run a local server.' : '';
 
   var el = {
     prev: document.getElementById('prevBtn'), next: document.getElementById('nextBtn'),
@@ -727,14 +628,11 @@ function startReader(){
   var activeEPUBSelection = null;
   var epubZoomPercent = 100;
 
-  if(!DOC.src && !DOC.base64){ fail('No document source specified.'); return; }
+  if(!DOC.src && !DOC.base64 && !DOC.chunks){ fail('No document source specified.'); return; }
   if(DOC.type === 'pdf'){ initPDF(); }
   else if(DOC.type === 'epub'){ initEPUB(); }
   else { fail('Unknown document type: ' + DOC.type); }
 
-  /* ==========================================================================
-     PDF VIEWER (WITH PROGRESS TRACKING & AUTO-RESUME)
-     ========================================================================== */
   function initPDF(){
     var viewer = document.getElementById('pdfViewer');
     viewer.classList.remove('hidden');
@@ -766,7 +664,7 @@ function startReader(){
       AnnotationManager.init();
       loadPDFBookmarks();
       checkPDFResume();
-    }).catch(function(e){ fail('Could not load the PDF.'+localHint+' ('+((e&&e.message)||e)+')'); });
+    }).catch(function(e){ fail('Could not load the PDF. ('+((e&&e.message)||e)+')'); });
 
     function checkPDFResume() {
       if (savedPos && savedPos.page && savedPos.page > 1 && savedPos.page <= numPages) {
@@ -1063,15 +961,15 @@ function startReader(){
     };
   }
 
-  /* ==========================================================================
-     EPUB VIEWER (WITH PROGRESS TRACKING & AUTO-RESUME)
-     ========================================================================== */
   function initEPUB(){
     document.getElementById('epubViewer').classList.remove('hidden');
     if(typeof ePub === 'undefined'){ fail('EPUB library failed to load.'); return; }
     var book;
-    try{ book = DOC.base64 ? ePub(b64ToBytes(DOC.base64).buffer, {openAs:'binary'}) : ePub(DOC.src); }
-    catch(e){ fail('Could not open EPUB.'+localHint); return; }
+    try {
+      var epubData = DOC.base64 ? b64ToBytes(DOC.base64).buffer : DOC.src;
+      book = DOC.base64 ? ePub(epubData, {openAs:'binary'}) : ePub(DOC.src);
+    } catch(e){ fail('Could not open EPUB. ('+((e&&e.message)||e)+')'); return; }
+    
     rendition = book.renderTo('epubArea', { width:'100%', height:'100%', flow:'paginated', spread:'auto', allowScriptedContent:true });
     var results=[], current=-1, locReady=false;
     var activeSearchHighlightCfi = null;
@@ -1093,7 +991,7 @@ function startReader(){
         locReady=true; 
         updateLoc(); 
       }).catch(function(){ locReady=true; });
-    }).catch(function(e){ fail('Could not open EPUB.'+localHint+' ('+((e&&e.message)||e)+')'); });
+    }).catch(function(e){ fail('Could not open EPUB. ('+((e&&e.message)||e)+')'); });
 
     function checkEPUBResume() {
       if (savedPos && savedPos.cfi) {
@@ -1281,9 +1179,6 @@ function startReader(){
     };
   }
 
-  /* ==========================================================================
-     HIGHLIGHTS & COMMENTS ENGINE (ANNOTATION MANAGER - STORAGE PERSISTENCE)
-     ========================================================================== */
   function getPDFSelectionData() {
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
@@ -1325,6 +1220,97 @@ function startReader(){
     };
   }
 
+  function getEpubAnnoBoundingRect(anno, clickEvent) {
+    if (anno && anno.cfiRange && rendition) {
+      try {
+        var contentsList = rendition.getContents();
+        for (var i = 0; i < contentsList.length; i++) {
+          var cnt = contentsList[i];
+          if (cnt && cnt.document) {
+            var doc = cnt.document;
+            var win = cnt.window || doc.defaultView || window;
+            var iframe = (win && win.frameElement) ? win.frameElement : null;
+            if (!iframe && rendition.manager && rendition.manager.views && rendition.manager.views._views) {
+              iframe = rendition.manager.views._views[i] ? rendition.manager.views._views[i].iframe : null;
+            }
+            if (!iframe) continue;
+
+            var range = null;
+            if (typeof ePub !== 'undefined' && ePub.CFI) {
+              try {
+                var cfiObj = new ePub.CFI(anno.cfiRange);
+                range = cfiObj.toRange(doc);
+              } catch(e) {}
+            }
+            if (!range && rendition.getRange) {
+              try { range = rendition.getRange(anno.cfiRange); } catch(e) {}
+            }
+
+            if (range) {
+              var r = range.getBoundingClientRect();
+              if (r && (r.width > 0 || r.height > 0)) {
+                var iframeRect = iframe.getBoundingClientRect();
+                return {
+                  top: r.top + iframeRect.top,
+                  left: r.left + iframeRect.left,
+                  width: r.width,
+                  height: r.height,
+                  bottom: r.bottom + iframeRect.top
+                };
+              }
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
+    if (clickEvent) {
+      var targetEl = clickEvent.target || clickEvent.currentTarget;
+      if (targetEl && targetEl.getBoundingClientRect) {
+        var doc = targetEl.ownerDocument;
+        var win = doc ? doc.defaultView : null;
+        var iframe = (win && win.frameElement) ? win.frameElement : null;
+        if (!iframe && rendition && rendition.manager && rendition.manager.views && rendition.manager.views._views) {
+          iframe = rendition.manager.views._views[0].iframe;
+        }
+        var iframeRect = iframe ? iframe.getBoundingClientRect() : { top: 0, left: 0 };
+        var r = targetEl.getBoundingClientRect();
+        if (r && (r.width > 0 || r.height > 0)) {
+          return {
+            top: r.top + iframeRect.top,
+            left: r.left + iframeRect.left,
+            width: r.width,
+            height: r.height,
+            bottom: r.bottom + iframeRect.top
+          };
+        }
+      }
+
+      if (typeof clickEvent.clientX === 'number' && clickEvent.clientX > 0) {
+        var targetEl = clickEvent.target;
+        var doc = targetEl ? targetEl.ownerDocument : null;
+        var win = doc ? doc.defaultView : null;
+        var iframe = (win && win.frameElement) ? win.frameElement : null;
+        var iframeRect = iframe ? iframe.getBoundingClientRect() : { top: 0, left: 0 };
+        return {
+          top: clickEvent.clientY + iframeRect.top,
+          left: clickEvent.clientX + iframeRect.left,
+          width: 10,
+          height: 10,
+          bottom: clickEvent.clientY + iframeRect.top + 10
+        };
+      }
+    }
+
+    return {
+      top: window.innerHeight / 2 - 50,
+      left: window.innerWidth / 2 - 145,
+      width: 290,
+      height: 100,
+      bottom: window.innerHeight / 2 + 50
+    };
+  }
+
   function showPopover(rect, onSave, onCancel, existingText) {
     var existing = document.querySelector('.anno-popover');
     if (existing) existing.remove();
@@ -1339,10 +1325,27 @@ function startReader(){
       </div>
     `;
     
-    popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';
-    popover.style.left = Math.max(10, Math.min(window.innerWidth - 290, rect.left + window.scrollX + (rect.width/2) - 140)) + 'px';
-    
+    popover.style.position = 'fixed';
     document.body.appendChild(popover);
+    
+    var popWidth = popover.offsetWidth || 280;
+    var popHeight = popover.offsetHeight || 160;
+    
+    var spaceBelow = window.innerHeight - rect.bottom;
+    var spaceAbove = rect.top;
+    var topPos;
+    if (spaceBelow >= popHeight + 12 || spaceBelow >= spaceAbove) {
+      topPos = rect.bottom + 8;
+    } else {
+      topPos = rect.top - popHeight - 8;
+    }
+    topPos = Math.max(10, Math.min(window.innerHeight - popHeight - 10, topPos));
+    
+    var leftPos = rect.left + (rect.width/2) - (popWidth/2);
+    leftPos = Math.max(10, Math.min(window.innerWidth - popWidth - 10, leftPos));
+    
+    popover.style.top = topPos + 'px';
+    popover.style.left = leftPos + 'px';
     
     var textarea = popover.querySelector('textarea');
     if (existingText) {
@@ -1511,67 +1514,49 @@ function startReader(){
 
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
-            var contents = contentsList[0];
-            if (contents && contents.document) {
-              var doc = contents.document;
-              doc.addEventListener('click', function(e) {
-                var matchedAnno = null;
-                
-                // Spatial hit testing against annotation CFI Ranges
-                for (var i = 0; i < self.annotations.length; i++) {
-                  var a = self.annotations[i];
-                  if (a.docType !== 'epub' || !a.cfiRange) continue;
+            contentsList.forEach(function(contents) {
+              if (contents && contents.document) {
+                var doc = contents.document;
+                doc.addEventListener('click', function(e) {
+                  var mark = e.target.closest && e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight, [class*="epub-comment"], [class*="epub-highlight"]');
+                  var matchedAnno = null;
                   
-                  try {
-                    var cfi = getPointCfi(a.cfiRange);
-                    var range = new ePub.CFI(cfi).toRange(doc);
-                    if (range) {
-                      var rects = range.getClientRects();
-                      for (var r = 0; r < rects.length; r++) {
-                        var rect = rects[r];
-                        if (rect.width > 0 && rect.height > 0 &&
-                            e.clientX >= rect.left - 4 && e.clientX <= rect.right + 4 &&
-                            e.clientY >= rect.top - 4 && e.clientY <= rect.bottom + 4) {
-                          matchedAnno = a;
-                          break;
-                        }
-                      }
+                  if (mark) {
+                    if (mark.dataset && mark.dataset.annoId) {
+                      matchedAnno = self.annotations.find(function(a) { return a.id == mark.dataset.annoId; });
                     }
-                  } catch(err) {}
-                  if (matchedAnno) break;
-                }
-
-                var isAnnoElement = e.target.closest && e.target.closest('.epub-comment, .epub-highlight, g.epub-comment, g.epub-highlight, [class*="epub-comment"], [class*="epub-highlight"]');
-                if (!matchedAnno && isAnnoElement && isAnnoElement.dataset && isAnnoElement.dataset.annoId) {
-                  matchedAnno = self.annotations.find(function(a) { return a.id == isAnnoElement.dataset.annoId; });
-                }
-
-                if (matchedAnno) {
-                  var iframe = rendition.manager.views._views[0].iframe;
-                  var iframeRect = iframe.getBoundingClientRect();
-                  var targetRect = e.target.getBoundingClientRect();
-                  var rect = {
-                    top: targetRect.top + iframeRect.top,
-                    left: targetRect.left + iframeRect.left,
-                    width: targetRect.width,
-                    height: targetRect.height,
-                    bottom: targetRect.bottom + iframeRect.top
-                  };
-                  self.showViewCommentPopover(rect, matchedAnno);
-                }
-              });
-
-              doc.addEventListener('mouseup', function() {
-                setTimeout(function() {
-                  var sel = contents.window.getSelection();
-                  if (!sel || sel.isCollapsed) {
-                    activeEPUBSelection = null;
-                    document.getElementById('addHighlightBtn').disabled = true;
-                    document.getElementById('addCommentBtn').disabled = true;
+                    if (!matchedAnno) {
+                      var clickedTxt = (mark.textContent || e.target.textContent || '').trim();
+                      self.annotations.forEach(function(a) {
+                        if (a.docType === 'epub' && a.text) {
+                          var cleanText = a.text.trim();
+                          if (cleanText && (clickedTxt.indexOf(cleanText) !== -1 || cleanText.indexOf(clickedTxt) !== -1)) {
+                            matchedAnno = a;
+                          }
+                        }
+                      });
+                    }
                   }
-                }, 50);
-              });
-            }
+
+                  if (matchedAnno) {
+                    if (e.stopPropagation) e.stopPropagation();
+                    var rect = getEpubAnnoBoundingRect(matchedAnno, e);
+                    self.showViewCommentPopover(rect, matchedAnno);
+                  }
+                });
+
+                doc.addEventListener('mouseup', function() {
+                  setTimeout(function() {
+                    var sel = contents.window.getSelection();
+                    if (!sel || sel.isCollapsed) {
+                      activeEPUBSelection = null;
+                      document.getElementById('addHighlightBtn').disabled = true;
+                      document.getElementById('addCommentBtn').disabled = true;
+                    }
+                  }, 50);
+                });
+              }
+            });
           }
         });
       }
@@ -1633,10 +1618,23 @@ function startReader(){
           self.clearSelection();
         });
       } else if (DOC.type === 'epub' && activeEPUBSelection) {
-        var iframe = rendition.manager.views._views[0].iframe;
-        var iframeRect = iframe.getBoundingClientRect();
-        var sel = iframe.contentWindow.getSelection();
-        var r = sel.getRangeAt(0).getBoundingClientRect();
+        var views = rendition.manager.views._views;
+        var iframe = null;
+        if (views && views.length > 0) {
+          iframe = views[0].iframe;
+          for (var v = 0; v < views.length; v++) {
+            if (views[v] && views[v].iframe) {
+              var selection = views[v].iframe.contentWindow.getSelection();
+              if (selection && !selection.isCollapsed) {
+                iframe = views[v].iframe;
+                break;
+              }
+            }
+          }
+        }
+        var iframeRect = iframe ? iframe.getBoundingClientRect() : { top: 0, left: 0 };
+        var sel = iframe ? iframe.contentWindow.getSelection() : null;
+        var r = (sel && sel.rangeCount > 0) ? sel.getRangeAt(0).getBoundingClientRect() : { top: 100, left: 100, width: 20, height: 20, bottom: 120 };
         var rect = {
           top: r.top + iframeRect.top,
           left: r.left + iframeRect.left,
@@ -1660,9 +1658,16 @@ function startReader(){
     
     clearSelection: function() {
       try { window.getSelection().removeAllRanges(); } catch(e){}
-      if (DOC.type === 'epub') {
+      if (DOC.type === 'epub' && rendition && rendition.manager && rendition.manager.views) {
         try {
-          rendition.manager.views._views[0].iframe.contentWindow.getSelection().removeAllRanges();
+          var views = rendition.manager.views._views;
+          if (views) {
+            views.forEach(function(v) {
+              if (v && v.iframe && v.iframe.contentWindow) {
+                v.iframe.contentWindow.getSelection().removeAllRanges();
+              }
+            });
+          }
         } catch(e) {}
       }
       activePDFSelection = null;
@@ -1947,7 +1952,6 @@ function startReader(){
     
     renderEPUBAnnotation: function(anno) {
       if (anno.docType !== 'epub') return;
-      var self = this;
       
       var isComment = (anno.type === 'comment' || (anno.comment && anno.comment.trim() !== ''));
       var cssClass = isComment ? 'epub-comment' : 'epub-highlight';
@@ -1959,20 +1963,11 @@ function startReader(){
         rendition.annotations.remove(anno.cfiRange, 'highlight');
       } catch(e) {}
       
+      var self = this;
       var cb = function(e) {
-        try {
-          var iframe = rendition.manager.views._views[0].iframe;
-          var iframeRect = iframe.getBoundingClientRect();
-          var targetRect = (e && e.target && e.target.getBoundingClientRect) ? e.target.getBoundingClientRect() : iframeRect;
-          var rect = {
-            top: targetRect.top + iframeRect.top,
-            left: targetRect.left + iframeRect.left,
-            width: targetRect.width,
-            height: targetRect.height,
-            bottom: targetRect.bottom + iframeRect.top
-          };
-          self.showViewCommentPopover(rect, anno);
-        } catch(err) {}
+        if (e && e.stopPropagation) e.stopPropagation();
+        var rect = getEpubAnnoBoundingRect(anno, e);
+        self.showViewCommentPopover(rect, anno);
       };
 
       rendition.annotations.add('highlight', anno.cfiRange, { annoId: anno.id }, cb, cssClass, styles);
@@ -2042,6 +2037,8 @@ function startReader(){
             renderEdit();
           };
         }
+        
+        positionPopover();
       }
       
       function renderEdit() {
@@ -2105,14 +2102,37 @@ function startReader(){
             showToast('Comment cannot be empty.');
           }
         }
+
+        positionPopover();
+      }
+
+      function positionPopover() {
+        var popWidth = popover.offsetWidth || 290;
+        var popHeight = popover.offsetHeight || 150;
+        
+        var spaceBelow = window.innerHeight - rect.bottom;
+        var spaceAbove = rect.top;
+        
+        var topPos;
+        if (spaceBelow >= popHeight + 12 || spaceBelow >= spaceAbove) {
+          topPos = rect.bottom + 8;
+        } else {
+          topPos = rect.top - popHeight - 8;
+        }
+        
+        topPos = Math.max(10, Math.min(window.innerHeight - popHeight - 10, topPos));
+        
+        var leftPos = rect.left + (rect.width / 2) - (popWidth / 2);
+        leftPos = Math.max(10, Math.min(window.innerWidth - popWidth - 10, leftPos));
+        
+        popover.style.position = 'fixed';
+        popover.style.top = topPos + 'px';
+        popover.style.left = leftPos + 'px';
       }
       
       renderReadOnly();
-      
-      popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';
-      popover.style.left = Math.max(10, Math.min(window.innerWidth - 300, rect.left + window.scrollX + (rect.width/2) - 140)) + 'px';
-      
       document.body.appendChild(popover);
+      positionPopover();
       
       setTimeout(function() {
         var clickOutside = function(e) {
@@ -2126,9 +2146,6 @@ function startReader(){
     }
   };
 
-  /* ==========================================================================
-     THEME ACCESSIBILITY ENGINE (DARK MODE CONTROLLER)
-     ========================================================================== */
   function applyEPUBStyles(contents) {
     if (!contents) return;
     try {
@@ -2156,7 +2173,6 @@ function startReader(){
         '.tts-active-element { background-color: rgba(237, 233, 254, 0.65) !important; border-left: 4px solid #7c3aed !important; padding-left: 6px !important; transition: background-color 0.2s ease !important; }'
       );
 
-      // Base annotation styles (Light Mode Defaults)
       cssRules.push(
         '.epub-highlight, g.epub-highlight, [class*="epub-highlight"] { background-color: rgba(254, 240, 138, 0.55) !important; border-bottom: 2px solid #eab308 !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
         '.epub-highlight rect, g.epub-highlight rect { fill: #fef08a !important; fill-opacity: 0.35 !important; stroke: #eab308 !important; stroke-width: 1px !important; cursor: pointer !important; pointer-events: auto !important; mix-blend-mode: multiply !important; }',
@@ -2196,8 +2212,10 @@ function startReader(){
       if (DOC.type !== 'epub' || !rendition) return;
       try {
         var activeViews = rendition.manager.views._views;
-        if (activeViews && activeViews.length > 0 && activeViews[0].contents) {
-          applyEPUBStyles(activeViews[0].contents);
+        if (activeViews && activeViews.length > 0) {
+          activeViews.forEach(function(v) {
+            if (v && v.contents) applyEPUBStyles(v.contents);
+          });
         }
       } catch(e) {}
     }
@@ -2235,9 +2253,6 @@ function startReader(){
     }
   }
 
-  /* ==========================================================================
-     TEXT-TO-SPEECH AUDIO ENGINE (PAGE-AWARE WCAG ACCESSIBILITY & HIGHLIGHTING)
-     ========================================================================== */
   function initializeTTS() {
     var ttsPlayBtn = document.getElementById('ttsPlayBtn');
     var ttsStopBtn = document.getElementById('ttsStopBtn');
@@ -2255,7 +2270,6 @@ function startReader(){
     var currentBlockIndex = 0;
     var timerInterval = null;
 
-    // Retain global reference to prevent V8 garbage collection mid-speech
     window.__currentUtterance__ = null;
 
     function clearTTSHighlights() {
@@ -2377,7 +2391,6 @@ function startReader(){
             var doc = cnt.document;
             var win = cnt.window || doc.defaultView || window;
 
-            // Tier 1: Retrieve EPUB.js location CFI for exact visible page bounds
             var loc = rendition.currentLocation();
             var startNode = null, endNode = null;
 
@@ -2401,7 +2414,6 @@ function startReader(){
               } catch(e) {}
             }
 
-            // DOM position helpers
             function isAtOrAfter(node, refNode) {
               if (!refNode) return true;
               if (node === refNode || node.contains(refNode) || refNode.contains(node)) return true;
@@ -2434,7 +2446,6 @@ function startReader(){
 
             var pageBlocks = [];
 
-            // Attempt Tier 1 CFI Range filtering
             if (startNode) {
               candidateElems.forEach(function(item) {
                 if (isAtOrAfter(item.el, startNode)) {
@@ -2445,7 +2456,6 @@ function startReader(){
               });
             }
 
-            // Tier 2: Absolute Column Scroll Position Fallback
             if (pageBlocks.length === 0) {
               var scrollX = win.scrollX || win.pageXOffset || (doc.documentElement && doc.documentElement.scrollLeft) || (doc.body && doc.body.scrollLeft) || 0;
               var vWidth = win.innerWidth || (doc.documentElement && doc.documentElement.clientWidth) || 800;
@@ -2460,7 +2470,6 @@ function startReader(){
               });
             }
 
-            // Tier 3: Forward Traverse Fallback
             if (pageBlocks.length === 0 && startNode) {
               candidateElems.forEach(function(item) {
                 if (isAtOrAfter(item.el, startNode)) {
@@ -2504,7 +2513,6 @@ function startReader(){
       isReading = true;
       isPaused = false;
 
-      // Pulse to prevent browser speech engine timeouts
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(function() {
         if (isReading && !isPaused && synth.speaking) {
@@ -2519,7 +2527,6 @@ function startReader(){
     if (ttsPlayBtn) ttsPlayBtn.onclick = playTTS;
     if (ttsStopBtn) ttsStopBtn.onclick = stopTTS;
 
-    // Automatically stop TTS audio when page or location changes
     el.prev.addEventListener('click', stopTTS);
     el.next.addEventListener('click', stopTTS);
     el.pageInput.addEventListener('change', stopTTS);
@@ -2534,7 +2541,6 @@ function startReader(){
 </body>
 </html></template>
 
-<!-- JSZip for building the package -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
 (function(){
@@ -2596,6 +2602,7 @@ function startReader(){
       r.readAsDataURL(file);
     });
   }
+
   function fetchBuf(url){
     return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status+' for '+url); return r.arrayBuffer(); });
   }
@@ -2620,8 +2627,15 @@ function startReader(){
     }
 
     log('Reading '+picked.file.name+' ('+fmtSize(picked.file.size)+')…');
-    return readAsBase64(picked.file).then(function(docB64){
-      log('✓ Document read','ok');
+    return readAsBase64(picked.file).then(function(b64){
+      log('✓ Document read into memory','ok');
+      
+      var CHUNK_SIZE = 65536;
+      var chunks = [];
+      for (var offset = 0; offset < b64.length; offset += CHUNK_SIZE) {
+        chunks.push(b64.slice(offset, offset + CHUNK_SIZE));
+      }
+
       var docCfg, libFetches = Promise.resolve();
 
       if(bundle){
@@ -2645,21 +2659,26 @@ function startReader(){
       }
 
       return libFetches.then(function(){
-        docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
-        var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
-        pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
-        pkg.file('index.html', rawTemplate);
+        docCfg.type = type; 
+        docCfg.name = name; 
+        docCfg.chunks = chunks;
+        
+        var jsonPayload = JSON.stringify(docCfg);
+        var finalIndexHtml = rawTemplate.replace('/*DOC_PAYLOAD_PLACEHOLDER*/', jsonPayload);
+
+        pkg.file('index.html', finalIndexHtml);
         pkg.file('README.txt', readme(name, folder, type, bundle));
         log('Compressing package…');
-        return zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
+        return zip.generateAsync({type:'blob', mimeType:'application/zip', compression:'DEFLATE', compressionOptions:{level:6}},
           function(meta){ genBtn.textContent='Compressing… '+Math.round(meta.percent)+'%'; });
       });
     }).then(function(blob){
-      var url = URL.createObjectURL(blob);
+      var zipBlob = new Blob([blob], { type: 'application/zip' });
+      var url = URL.createObjectURL(zipBlob);
       var a=document.createElement('a'); a.href=url; a.download=folder+'.zip';
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-      log('✓ Done — '+folder+'.zip ('+fmtSize(blob.size)+') downloaded.','ok');
+      log('✓ Done — '+folder+'.zip ('+fmtSize(zipBlob.size)+') downloaded cleanly.','ok');
       genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)';
     });
   }
@@ -2673,11 +2692,11 @@ function startReader(){
       '',
       'CONTENTS',
       '  index.html            The reader (open this).',
-      '  assets/               Reader libraries + your embedded document.',
+      '  assets/               Reader libraries + clean document payload.',
       '',
       'PREVIEW',
-      '  The document is embedded in the package, so you can open index.html',
-      '  directly (double-click it) to preview — no web server required.',
+      '  The document is embedded cleanly in the package, so you can open index.html',
+      '  directly or serve it on any LMS/web host.',
       '',
       'HOW TO EMBED IN YOUR LMS',
       '  1. Upload this entire "'+folder+'" folder to your LMS or web host,',
@@ -2687,18 +2706,16 @@ function startReader(){
       '     <iframe src="'+folder+'/index.html" width="100%" height="800"',
       '             style="border:0" allowfullscreen></iframe>',
       '',
-      '  (Adjust the src path to wherever you uploaded the folder.)',
-      '',
       'FEATURES',
       '  - Fast streaming load; pages render on demand (handles large PDFs)',
       '  - Search across the whole document with a results list',
-      '  - Zoom in / out',
-      '  - Page / position navigation',
+      '  - Zoom in / out & 1-Page / 2-Page Spread toggle',
+      '  - Page / position navigation with smooth responsive sidebar shifting',
       '  - Reading Progress Bar & Auto-Resume reading position prompt',
       '  - Table of Contents chapter outlines navigation dropdown',
       '  - Highlights and Comments suite with persistent annotations side drawer',
       '  - Accessible WCAG AAA Dark Mode theme toggler',
-      '  - Text-To-Speech read aloud with live visual text highlighting',
+      '  - Page-aware Text-To-Speech read aloud with live visual text highlighting',
       ''
     ].join('\n');
   }
