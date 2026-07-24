@@ -2157,7 +2157,7 @@ function startReader(){
   }
 
   /* ==========================================================================
-     TEXT-TO-SPEECH AUDIO ENGINE (WCAG ACCESSIBILITY & LIVE HIGHLIGHTING)
+     TEXT-TO-SPEECH AUDIO ENGINE (PAGE-AWARE WCAG ACCESSIBILITY & HIGHLIGHTING)
      ========================================================================== */
   function initializeTTS() {
     var ttsPlayBtn = document.getElementById('ttsPlayBtn');
@@ -2273,31 +2273,87 @@ function startReader(){
         var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
         if (slot) {
           var spans = slot.querySelectorAll('span');
+          var viewerRect = el.viewerArea.getBoundingClientRect();
+          var visibleSpans = [];
+
           spans.forEach(function(span) {
             var txt = (span.textContent || '').trim();
             if (txt.length > 0) {
-              blocks.push({ el: span, text: txt });
+              var rect = span.getBoundingClientRect();
+              if (rect.bottom >= viewerRect.top - 10) {
+                visibleSpans.push({ el: span, text: txt });
+              }
             }
           });
+
+          blocks = visibleSpans.length > 0 ? visibleSpans : Array.prototype.map.call(spans, function(span){
+            return { el: span, text: (span.textContent || '').trim() };
+          }).filter(function(b){ return b.text.length > 0; });
         }
       } else if (DOC.type === 'epub') {
         try {
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
-            var doc = contentsList[0].document;
+            var cnt = contentsList[0];
+            var doc = cnt.document;
+            var win = cnt.window || doc.defaultView || window;
+            var vWidth = win.innerWidth || doc.documentElement.clientWidth || doc.body.clientWidth || 800;
+            var vHeight = win.innerHeight || doc.documentElement.clientHeight || doc.body.clientHeight || 600;
+
             var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd');
             if (!elems || elems.length === 0) {
               elems = doc.querySelectorAll('div, section, body');
             }
-            elems.forEach(function(el) {
-              var hasBlockChild = el.querySelector('p, h1, h2, h3, h4, h5, h6, li, blockquote');
+
+            var candidateElems = [];
+            elems.forEach(function(item) {
+              var hasBlockChild = item.querySelector('p, h1, h2, h3, h4, h5, h6, li, blockquote');
               if (!hasBlockChild) {
-                var txt = (el.innerText || el.textContent || '').trim();
+                var txt = (item.innerText || item.textContent || '').trim();
                 if (txt.length > 0) {
-                  blocks.push({ el: el, text: txt });
+                  candidateElems.push({ el: item, text: txt });
                 }
               }
             });
+
+            // Filter for elements visible on the current page view
+            var pageBlocks = [];
+            candidateElems.forEach(function(item) {
+              var rect = item.el.getBoundingClientRect();
+              if (rect.width === 0 || rect.height === 0) return;
+
+              var isHorizVisible = (rect.right > 5 && rect.left < vWidth - 5);
+              var isVertVisible = (rect.bottom > 5 && rect.top < vHeight - 5);
+
+              if (isHorizVisible && isVertVisible) {
+                pageBlocks.push(item);
+              }
+            });
+
+            // Fallback: If no strict viewport matches, start from first element on or after current view
+            if (pageBlocks.length === 0) {
+              var startIndex = -1;
+              for (var i = 0; i < candidateElems.length; i++) {
+                var r = candidateElems[i].el.getBoundingClientRect();
+                if (r.bottom > 5 && r.right > 5) {
+                  startIndex = i;
+                  break;
+                }
+              }
+
+              if (startIndex !== -1) {
+                for (var j = startIndex; j < candidateElems.length; j++) {
+                  var r2 = candidateElems[j].el.getBoundingClientRect();
+                  if (r2.top < vHeight + 20 && r2.left < vWidth + 20) {
+                    pageBlocks.push(candidateElems[j]);
+                  } else {
+                    break;
+                  }
+                }
+              }
+            }
+
+            blocks = pageBlocks;
           }
         } catch(e) {}
       }
@@ -2332,7 +2388,7 @@ function startReader(){
       isReading = true;
       isPaused = false;
 
-      // Chrome keep-alive pulse to prevent V8 speech engine freezes
+      // Pulse to prevent browser speech engine timeouts
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(function() {
         if (isReading && !isPaused && synth.speaking) {
@@ -2347,10 +2403,12 @@ function startReader(){
     if (ttsPlayBtn) ttsPlayBtn.onclick = playTTS;
     if (ttsStopBtn) ttsStopBtn.onclick = stopTTS;
 
-    // Stop speaking when user navigates to a new page or chapter
+    // Automatically stop TTS audio when page or location changes
     el.prev.addEventListener('click', stopTTS);
     el.next.addEventListener('click', stopTTS);
+    el.pageInput.addEventListener('change', stopTTS);
     if (el.tocSelect) el.tocSelect.addEventListener('change', stopTTS);
+    if (rendition) rendition.on('relocated', stopTTS);
     window.addEventListener('beforeunload', stopTTS);
   }
 
