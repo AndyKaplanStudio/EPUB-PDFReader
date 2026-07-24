@@ -2308,9 +2308,8 @@ function startReader(){
           spans.forEach(function(span) {
             var txt = (span.textContent || '').trim();
             if (txt.length > 0) {
-              var rect = span.getBoundingClientRect();
-              // Only include spans that are currently visible within or below the viewer scroll offset
-              if (rect.bottom >= viewerRect.top) {
+              var r = span.getBoundingClientRect();
+              if (r.bottom >= viewerRect.top + 5 && r.top <= viewerRect.bottom - 5) {
                 blocks.push({ el: span, text: txt });
               }
             }
@@ -2335,8 +2334,7 @@ function startReader(){
                 var txt = (el.innerText || el.textContent || '').trim();
                 if (txt.length > 0) {
                   var r = el.getBoundingClientRect();
-                  // Check if element is horizontally & vertically visible inside the paginated EPUB viewport
-                  var isVisibleInViewport = (r.right > 0 && r.left < iframeWidth && r.bottom > 0 && r.top < iframeHeight);
+                  var isVisibleInViewport = (r.left >= -10 && r.left < iframeWidth - 10 && r.bottom > 0 && r.top < iframeHeight);
                   if (isVisibleInViewport) {
                     blocks.push({ el: el, text: txt });
                   }
