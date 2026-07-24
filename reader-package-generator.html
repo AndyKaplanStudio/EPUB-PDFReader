@@ -210,6 +210,7 @@
   
   /* PDF Annotations & TextLayer */
   #pdfViewer{padding:22px 0;display:flex;flex-direction:column;align-items:center;gap:18px}
+  #pdfViewer.two-page-mode{flex-direction:row!important;flex-wrap:wrap!important;justify-content:center!important;align-items:flex-start!important;row-gap:20px!important;column-gap:14px!important}
   .page-slot{position:relative;flex:0 0 auto;background:#fff;box-shadow:0 1px 10px rgba(34,33,33,.10);border:1px solid var(--kap-line)}
   .page{position:absolute;inset:0}
   .page canvas{display:block}
@@ -467,6 +468,7 @@
       <button class="rbtn icon" id="zoomOut" title="Zoom out">&#8722;</button>
       <span id="zoomLevel">100%</span>
       <button class="rbtn icon" id="zoomIn" title="Zoom in">&#43;</button>
+      <button class="rbtn icon" id="layoutToggle" title="Switch to 2-Page View">📖</button>
     </div>
     <div class="group" id="searchGroup">
       <input id="search" placeholder="Search…" autocomplete="off">
@@ -659,6 +661,35 @@ function startReader(){
   if (mobileMenuBtn) {
     mobileMenuBtn.onclick = function() {
       document.getElementById('toolbar').classList.toggle('menu-open');
+    };
+  }
+
+  var isTwoPage = false;
+  var layoutToggleBtn = document.getElementById('layoutToggle');
+  if (layoutToggleBtn) {
+    layoutToggleBtn.onclick = function() {
+      isTwoPage = !isTwoPage;
+      if (isTwoPage) {
+        layoutToggleBtn.classList.add('active');
+        layoutToggleBtn.title = "Switch to 1-Page View";
+        layoutToggleBtn.textContent = "📄";
+      } else {
+        layoutToggleBtn.classList.remove('active');
+        layoutToggleBtn.title = "Switch to 2-Page View";
+        layoutToggleBtn.textContent = "📖";
+      }
+
+      if (DOC.type === 'pdf') {
+        var pdfViewer = document.getElementById('pdfViewer');
+        if (pdfViewer) {
+          pdfViewer.classList.toggle('two-page-mode', isTwoPage);
+        }
+      } else if (DOC.type === 'epub' && rendition) {
+        try {
+          rendition.spread(isTwoPage ? "always" : "none");
+          rendition.resize();
+        } catch(e) {}
+      }
     };
   }
 
