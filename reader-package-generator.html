@@ -2297,8 +2297,45 @@ function startReader(){
             var cnt = contentsList[0];
             var doc = cnt.document;
             var win = cnt.window || doc.defaultView || window;
-            var vWidth = win.innerWidth || doc.documentElement.clientWidth || doc.body.clientWidth || 800;
-            var vHeight = win.innerHeight || doc.documentElement.clientHeight || doc.body.clientHeight || 600;
+
+            // Tier 1: Retrieve EPUB.js location CFI for exact visible page bounds
+            var loc = rendition.currentLocation();
+            var startNode = null, endNode = null;
+
+            if (loc && loc.start && loc.start.cfi) {
+              try {
+                var startCfi = getPointCfi(loc.start.cfi);
+                if (typeof ePub !== 'undefined' && ePub.CFI) {
+                  var startRange = new ePub.CFI(startCfi).toRange(doc);
+                  if (startRange) startNode = startRange.startContainer;
+                }
+              } catch(e) {}
+            }
+
+            if (loc && loc.end && loc.end.cfi) {
+              try {
+                var endCfi = getPointCfi(loc.end.cfi);
+                if (typeof ePub !== 'undefined' && ePub.CFI) {
+                  var endRange = new ePub.CFI(endCfi).toRange(doc);
+                  if (endRange) endNode = endRange.endContainer;
+                }
+              } catch(e) {}
+            }
+
+            // DOM position helpers
+            function isAtOrAfter(node, refNode) {
+              if (!refNode) return true;
+              if (node === refNode || node.contains(refNode) || refNode.contains(node)) return true;
+              var pos = refNode.compareDocumentPosition(node);
+              return (pos & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+            }
+
+            function isAtOrBefore(node, refNode) {
+              if (!refNode) return true;
+              if (node === refNode || node.contains(refNode) || refNode.contains(node)) return true;
+              var pos = node.compareDocumentPosition(refNode);
+              return (pos & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+            }
 
             var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd');
             if (!elems || elems.length === 0) {
@@ -2316,44 +2353,44 @@ function startReader(){
               }
             });
 
-            // Filter for elements visible on the current page view
             var pageBlocks = [];
-            candidateElems.forEach(function(item) {
-              var rect = item.el.getBoundingClientRect();
-              if (rect.width === 0 || rect.height === 0) return;
 
-              var isHorizVisible = (rect.right > 5 && rect.left < vWidth - 5);
-              var isVertVisible = (rect.bottom > 5 && rect.top < vHeight - 5);
-
-              if (isHorizVisible && isVertVisible) {
-                pageBlocks.push(item);
-              }
-            });
-
-            // Fallback: If no strict viewport matches, start from first element on or after current view
-            if (pageBlocks.length === 0) {
-              var startIndex = -1;
-              for (var i = 0; i < candidateElems.length; i++) {
-                var r = candidateElems[i].el.getBoundingClientRect();
-                if (r.bottom > 5 && r.right > 5) {
-                  startIndex = i;
-                  break;
-                }
-              }
-
-              if (startIndex !== -1) {
-                for (var j = startIndex; j < candidateElems.length; j++) {
-                  var r2 = candidateElems[j].el.getBoundingClientRect();
-                  if (r2.top < vHeight + 20 && r2.left < vWidth + 20) {
-                    pageBlocks.push(candidateElems[j]);
-                  } else {
-                    break;
+            // Attempt Tier 1 CFI Range filtering
+            if (startNode) {
+              candidateElems.forEach(function(item) {
+                if (isAtOrAfter(item.el, startNode)) {
+                  if (!endNode || isAtOrBefore(item.el, endNode)) {
+                    pageBlocks.push(item);
                   }
                 }
-              }
+              });
             }
 
-            blocks = pageBlocks;
+            // Tier 2: Absolute Column Scroll Position Fallback
+            if (pageBlocks.length === 0) {
+              var scrollX = win.scrollX || win.pageXOffset || (doc.documentElement && doc.documentElement.scrollLeft) || (doc.body && doc.body.scrollLeft) || 0;
+              var vWidth = win.innerWidth || (doc.documentElement && doc.documentElement.clientWidth) || 800;
+
+              candidateElems.forEach(function(item) {
+                var rect = item.el.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+                var absLeft = rect.left + scrollX;
+                if (absLeft >= scrollX - 20 && absLeft < scrollX + vWidth - 20) {
+                  pageBlocks.push(item);
+                }
+              });
+            }
+
+            // Tier 3: Forward Traverse Fallback
+            if (pageBlocks.length === 0 && startNode) {
+              candidateElems.forEach(function(item) {
+                if (isAtOrAfter(item.el, startNode)) {
+                  pageBlocks.push(item);
+                }
+              });
+            }
+
+            blocks = pageBlocks.length > 0 ? pageBlocks : candidateElems;
           }
         } catch(e) {}
       }
