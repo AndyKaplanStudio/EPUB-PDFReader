@@ -1609,7 +1609,7 @@ function startReader(){
       document.getElementById('addHighlightBtn').disabled = true;
       document.getElementById('addCommentBtn').disabled = true;
     },
-
+    
     toggleDrawer: function(force) {
       var drawer = document.getElementById('annotationDrawer');
       var open = force !== undefined ? force : !drawer.classList.contains('open');
@@ -2030,8 +2030,8 @@ function startReader(){
       
       renderReadOnly();
       
-      popover.style.top = (rect.bottom + (window.scrollY || 0) + 8) + 'px';
-      popover.style.left = Math.max(10, Math.min(window.innerWidth - 300, rect.left + (window.scrollX || 0) + (rect.width/2) - 140)) + 'px';
+      popover.style.top = (rect.bottom + window.scrollY + 8) + 'px';
+      popover.style.left = Math.max(10, Math.min(window.innerWidth - 300, rect.left + window.scrollX + (rect.width/2) - 140)) + 'px';
       
       document.body.appendChild(popover);
       
@@ -2043,7 +2043,7 @@ function startReader(){
           }
         };
         document.addEventListener('click', clickOutside);
-      }, 50);
+      }, 10);
     }
   };
 
@@ -2266,70 +2266,17 @@ function startReader(){
       synth.speak(utt);
     }
 
-    function isElementVisibleInIframe(element, iframeWin) {
-      if (!element || !iframeWin) return false;
-      var w = iframeWin.innerWidth || iframeWin.document.documentElement.clientWidth;
-      var h = iframeWin.innerHeight || iframeWin.document.documentElement.clientHeight;
-      var rects = element.getClientRects();
-      if (!rects || rects.length === 0) {
-        var r = element.getBoundingClientRect();
-        return (r.width > 0 && r.height > 0 && r.right > 10 && r.left < w - 10 && r.bottom > 10 && r.top < h - 10);
-      }
-      for (var i = 0; i < rects.length; i++) {
-        var r = rects[i];
-        if (r.width > 0 && r.height > 0 && r.right > 10 && r.left < w - 10 && r.bottom > 10 && r.top < h - 10) {
-          return true;
-        }
-      }
-      return false;
-    }
-
     function extractSpeechBlocks() {
       var blocks = [];
-
-      // 1. Check for active user text selection first (PDF or EPUB)
-      if (DOC.type === 'pdf') {
-        var pdfSel = window.getSelection();
-        if (pdfSel && !pdfSel.isCollapsed && pdfSel.rangeCount > 0) {
-          var selText = pdfSel.toString().trim();
-          if (selText.length > 0) {
-            var anchorEl = pdfSel.anchorNode ? (pdfSel.anchorNode.nodeType === 3 ? pdfSel.anchorNode.parentNode : pdfSel.anchorNode) : null;
-            blocks.push({ el: anchorEl, text: selText });
-            return blocks;
-          }
-        }
-      } else if (DOC.type === 'epub' && rendition) {
-        try {
-          var contentsList = rendition.getContents();
-          if (contentsList && contentsList.length > 0) {
-            var iframeWin = contentsList[0].window;
-            var epubSel = iframeWin ? iframeWin.getSelection() : null;
-            if (epubSel && !epubSel.isCollapsed && epubSel.rangeCount > 0) {
-              var selText = epubSel.toString().trim();
-              if (selText.length > 0) {
-                var anchorEl = epubSel.anchorNode ? (epubSel.anchorNode.nodeType === 3 ? epubSel.anchorNode.parentNode : epubSel.anchorNode) : null;
-                blocks.push({ el: anchorEl, text: selText });
-                return blocks;
-              }
-            }
-          }
-        } catch(e) {}
-      }
-
-      // 2. If no text is manually selected, extract visible text inside current page/screen viewport
       if (DOC.type === 'pdf') {
         var curPage = currentTopPage();
         var slot = document.querySelector('.page-slot[data-page="' + curPage + '"] .textLayer');
         if (slot) {
-          var viewerRect = el.viewerArea.getBoundingClientRect();
           var spans = slot.querySelectorAll('span');
           spans.forEach(function(span) {
             var txt = (span.textContent || '').trim();
             if (txt.length > 0) {
-              var r = span.getBoundingClientRect();
-              if (r.bottom >= viewerRect.top + 5 && r.top <= viewerRect.bottom - 5) {
-                blocks.push({ el: span, text: txt });
-              }
+              blocks.push({ el: span, text: txt });
             }
           });
         }
@@ -2337,20 +2284,17 @@ function startReader(){
         try {
           var contentsList = rendition.getContents();
           if (contentsList && contentsList.length > 0) {
-            var iframeWin = contentsList[0].window;
             var doc = contentsList[0].document;
             var elems = doc.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, dt, dd');
             if (!elems || elems.length === 0) {
               elems = doc.querySelectorAll('div, section, body');
             }
-            elems.forEach(function(elem) {
-              var hasBlockChild = elem.querySelector('p, h1, h2, h3, h4, h5, h6, li, blockquote');
+            elems.forEach(function(el) {
+              var hasBlockChild = el.querySelector('p, h1, h2, h3, h4, h5, h6, li, blockquote');
               if (!hasBlockChild) {
-                var txt = (elem.innerText || elem.textContent || '').trim();
+                var txt = (el.innerText || el.textContent || '').trim();
                 if (txt.length > 0) {
-                  if (isElementVisibleInIframe(elem, iframeWin)) {
-                    blocks.push({ el: elem, text: txt });
-                  }
+                  blocks.push({ el: el, text: txt });
                 }
               }
             });
@@ -2361,4 +2305,230 @@ function startReader(){
     }
 
     function playTTS() {
-<!-- ... existing code -->
+      if (isReading) {
+        if (isPaused) {
+          try { synth.resume(); } catch(e){}
+          isPaused = false;
+          ttsPlayBtn.textContent = '⏸️';
+          ttsPlayBtn.title = 'Pause Reading';
+          return;
+        } else {
+          try { synth.pause(); } catch(e){}
+          isPaused = true;
+          ttsPlayBtn.textContent = '🔊';
+          ttsPlayBtn.title = 'Resume Reading';
+          return;
+        }
+      }
+
+      try { synth.cancel(); } catch(e){}
+      speechBlocks = extractSpeechBlocks();
+
+      if (speechBlocks.length === 0) {
+        showToast('No readable text found on this page.');
+        return;
+      }
+
+      isReading = true;
+      isPaused = false;
+
+      // Chrome keep-alive pulse to prevent V8 speech engine freezes
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(function() {
+        if (isReading && !isPaused && synth.speaking) {
+          synth.pause();
+          synth.resume();
+        }
+      }, 10000);
+
+      playBlock(0);
+    }
+
+    if (ttsPlayBtn) ttsPlayBtn.onclick = playTTS;
+    if (ttsStopBtn) ttsStopBtn.onclick = stopTTS;
+
+    // Stop speaking when user navigates to a new page or chapter
+    el.prev.addEventListener('click', stopTTS);
+    el.next.addEventListener('click', stopTTS);
+    if (el.tocSelect) el.tocSelect.addEventListener('change', stopTTS);
+    window.addEventListener('beforeunload', stopTTS);
+  }
+
+  initializeTTS();
+}
+</script>
+</body>
+</html></template>
+
+<!-- JSZip for building the package -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var LIB_URLS = {
+    jszip:  "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js",
+    pdf:    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+    worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js",
+    epub:   "https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"
+  };
+
+  var fileEl = document.getElementById('file');
+  var drop = document.getElementById('drop');
+  var genBtn = document.getElementById('gen');
+  var titleEl = document.getElementById('title');
+  var folderEl = document.getElementById('folder');
+  var bundleEl = document.getElementById('bundle');
+  var logEl = document.getElementById('log');
+  var picked = null;
+
+  function log(msg, cls){
+    logEl.style.display='block';
+    var d=document.createElement('div'); if(cls) d.className=cls; d.textContent=msg;
+    logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight;
+  }
+  function slug(s){ return (s||'reader').toLowerCase().replace(/\.[^.]+$/,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60) || 'reader'; }
+  function fmtSize(b){ if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(1)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+
+  drop.addEventListener('click', function(){ fileEl.click(); });
+  drop.addEventListener('dragover', function(e){ e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', function(){ drop.classList.remove('over'); });
+  drop.addEventListener('drop', function(e){
+    e.preventDefault(); drop.classList.remove('over');
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileEl.addEventListener('change', function(){ if(fileEl.files[0]) handleFile(fileEl.files[0]); });
+
+  function handleFile(file){
+    var ext = (file.name.split('.').pop()||'').toLowerCase();
+    var type = ext==='pdf' ? 'pdf' : (ext==='epub' ? 'epub' : null);
+    if(!type){ log('✖ Error: Please choose a valid .pdf or .epub file.', 'err'); return; }
+    picked = {file:file, type:type};
+    document.getElementById('fileInfo').style.display='flex';
+    document.getElementById('fName').textContent = file.name;
+    document.getElementById('fMeta').textContent = type.toUpperCase()+' · '+fmtSize(file.size);
+    document.getElementById('fIcon').textContent = type==='pdf' ? '📕' : '📗';
+    if(!titleEl.value) titleEl.value = file.name.replace(/\.[^.]+$/,'');
+    if(!folderEl.value) folderEl.value = slug(file.name)+'-reader';
+    genBtn.disabled = false;
+    logEl.style.display='none'; logEl.innerHTML='';
+  }
+
+  function readAsBase64(file){
+    return new Promise(function(res,rej){
+      var r=new FileReader();
+      r.onload=function(){ var s=r.result; var i=s.indexOf(','); res(s.slice(i+1)); };
+      r.onerror=function(){ rej(new Error('Could not read the file.')); };
+      r.readAsDataURL(file);
+    });
+  }
+  function fetchBuf(url){
+    return fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status+' for '+url); return r.arrayBuffer(); });
+  }
+
+  genBtn.addEventListener('click', function(){ generate().catch(function(e){ log('✖ '+e.message,'err'); genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)'; }); });
+
+  function generate(){
+    if(!picked) return Promise.resolve();
+    if(typeof JSZip==='undefined'){ log('✖ Error: JSZip failed to load. Please connect to the internet.', 'err'); return Promise.resolve(); }
+    genBtn.disabled=true; genBtn.textContent='Generating…';
+    logEl.style.display='block'; logEl.innerHTML='';
+    var type = picked.type;
+    var name = (titleEl.value.trim() || picked.file.name);
+    var folder = slug(folderEl.value.trim() || 'reader');
+    var bundle = bundleEl.checked;
+    var zip = new JSZip();
+    var pkg = zip.folder(folder);
+
+    var rawTemplate = document.getElementById('readerTemplate').innerHTML;
+    if (!rawTemplate.trim().startsWith('<!DOCTYPE')) {
+      rawTemplate = '<!DOCTYPE html>\n' + rawTemplate;
+    }
+
+    log('Reading '+picked.file.name+' ('+fmtSize(picked.file.size)+')…');
+    return readAsBase64(picked.file).then(function(docB64){
+      log('✓ Document read','ok');
+      var docCfg, libFetches = Promise.resolve();
+
+      if(bundle){
+        log('Downloading reader libraries (one-time)…');
+        var needed = ['jszip','pdf','worker','epub'];
+        libFetches = Promise.all(needed.map(function(k){
+          return fetchBuf(LIB_URLS[k]).then(function(buf){
+            var fn = {jszip:'jszip.min.js',pdf:'pdf.min.js',worker:'pdf.worker.min.js',epub:'epub.min.js'}[k];
+            pkg.file('assets/'+fn, buf);
+            log('  ✓ '+fn+' ('+fmtSize(buf.byteLength)+')','ok');
+          });
+        }));
+        docCfg = {
+          libs:['assets/jszip.min.js','assets/pdf.min.js','assets/epub.min.js'],
+          libsFallback:[LIB_URLS.jszip, LIB_URLS.pdf, LIB_URLS.epub],
+          workerSrc:'assets/pdf.worker.min.js'
+        };
+      } else {
+        log('Using CDN libraries (reader will need internet to open).');
+        docCfg = { libs:[LIB_URLS.jszip, LIB_URLS.pdf, LIB_URLS.epub], libsFallback:[], workerSrc:LIB_URLS.worker };
+      }
+
+      return libFetches.then(function(){
+        docCfg.type = type; docCfg.name = name; docCfg.base64 = docB64;
+        var dataJs = 'window.__DOC__ = ' + JSON.stringify(docCfg) + ';\n';
+        pkg.file('assets/document-data.js', dataJs, {compression:'STORE'});
+        pkg.file('index.html', rawTemplate);
+        pkg.file('README.txt', readme(name, folder, type, bundle));
+        log('Compressing package…');
+        return zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}},
+          function(meta){ genBtn.textContent='Compressing… '+Math.round(meta.percent)+'%'; });
+      });
+    }).then(function(blob){
+      var url = URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=url; a.download=folder+'.zip';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+      log('✓ Done — '+folder+'.zip ('+fmtSize(blob.size)+') downloaded.','ok');
+      genBtn.disabled=false; genBtn.textContent='Generate reader package (.zip)';
+    });
+  }
+
+  function readme(name, folder, type, bundle){
+    return [
+      'Reader package: '+name,
+      '',
+      'Format: '+type.toUpperCase(),
+      'Libraries: '+(bundle?'bundled locally (works offline)':'loaded from CDN (needs internet)'),
+      '',
+      'CONTENTS',
+      '  index.html            The reader (open this).',
+      '  assets/               Reader libraries + your embedded document.',
+      '',
+      'PREVIEW',
+      '  The document is embedded in the package, so you can open index.html',
+      '  directly (double-click it) to preview — no web server required.',
+      '',
+      'HOW TO EMBED IN YOUR LMS',
+      '  1. Upload this entire "'+folder+'" folder to your LMS or web host,',
+      '     keeping index.html and the assets/ folder together.',
+      '  2. Add an iframe pointing at index.html, e.g.:',
+      '',
+      '     <iframe src="'+folder+'/index.html" width="100%" height="800"',
+      '             style="border:0" allowfullscreen></iframe>',
+      '',
+      '  (Adjust the src path to wherever you uploaded the folder.)',
+      '',
+      'FEATURES',
+      '  - Fast streaming load; pages render on demand (handles large PDFs)',
+      '  - Search across the whole document with a results list',
+      '  - Zoom in / out',
+      '  - Page / position navigation',
+      '  - Reading Progress Bar & Auto-Resume reading position prompt',
+      '  - Table of Contents chapter outlines navigation dropdown',
+      '  - Highlights and Comments suite with persistent annotations side drawer',
+      '  - Accessible WCAG AAA Dark Mode theme toggler',
+      '  - Text-To-Speech read aloud with live visual text highlighting',
+      ''
+    ].join('\n');
+  }
+})();
+</script>
+</body>
+</html>
